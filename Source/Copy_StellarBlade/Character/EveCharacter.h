@@ -13,10 +13,19 @@ class COPY_STELLARBLADE_API AEveCharacter : public ACharacter
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
+	class USpringArmComponent* SpringArm;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(EditAnywhere)
+	class UInputMappingContext* DefaultMappingContext;
+
+	UPROPERTY(EditAnywhere)
+	class UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere)
+	class UInputAction* LookAction;
 
 public:
 	AEveCharacter();
@@ -27,6 +36,11 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void NotifyControllerChanged() override;
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+protected:
+	void Move(const struct FInputActionValue& Values);
+	void Look(const struct FInputActionValue& Values);
 };
