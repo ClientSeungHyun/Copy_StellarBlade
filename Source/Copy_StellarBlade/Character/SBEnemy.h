@@ -9,6 +9,7 @@
 
 class USBStateComponent;
 class USBAttributeComponent;
+class ATargetPoint;
 
 UCLASS()
 class COPY_STELLARBLADE_API ASBEnemy : public ACharacter
@@ -43,6 +44,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimRight;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "AI | Patrol")
+	TArray<ATargetPoint*> PatrolPoints;
+
+	UPROPERTY(VisibleAnywhere, Category = "AI | Patrol")
+	int32 PatrolIndex = 0;
+
 public:
 	ASBEnemy();
 
@@ -60,4 +69,14 @@ protected:
 	void ImpactEffect(const FVector& Location);
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
+
+public:
+	FORCEINLINE ATargetPoint* GetPatrolPoint()
+	{
+		return PatrolPoints.Num() >= (PatrolIndex + 1) ? PatrolPoints[PatrolIndex] : nullptr;
+	}
+	FORCEINLINE void IncrementPatrolIndex()
+	{
+		PatrolIndex = (PatrolIndex + 1) % PatrolPoints.Num();
+	}
 };
