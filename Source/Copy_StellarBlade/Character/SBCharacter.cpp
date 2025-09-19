@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Character/SBCharacter.h"
+#include "Character/EveCharacter.h"
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/InputSettings.h"
@@ -9,8 +9,12 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "SBEveTags.h"
+#include "Components/SBEveAtrributeComponent.h"
+#include "Components/SBStateComponent.h"
+#include "Animation/SB_Eve_AnimInstance.h"
 
-ASBCharacter::ASBCharacter()
+AEveCharacter::AEveCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -23,6 +27,10 @@ ASBCharacter::ASBCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 
+	/** 이동, 감속 속도 */
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
 	SpringArm->TargetArmLength = 400.0f;
@@ -33,21 +41,25 @@ ASBCharacter::ASBCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(SpringArm);
 	FollowCamera->bUsePawnControlRotation = false;
+
+	AttributeComponent = CreateDefaultSubobject<USBEveAtrributeComponent>(TEXT("Attribute"));
+	StateComponent = CreateDefaultSubobject<USBStateComponent>(TEXT("State"));
+
 }
 
-void ASBCharacter::BeginPlay()
+void AEveCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-void ASBCharacter::Tick(float DeltaTime)
+void AEveCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-void ASBCharacter::NotifyControllerChanged()
+void AEveCharacter::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
 
@@ -61,7 +73,7 @@ void ASBCharacter::NotifyControllerChanged()
 
 }
 
-void ASBCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
@@ -69,13 +81,32 @@ void ASBCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
+
+
+		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
+		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
 	}
 
 }
 
-void ASBCharacter::Move(const FInputActionValue& Values)
+bool AEveCharacter::IsMoving() const
+{
+	if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+	{
+		return MovementComp->Velocity.Size2D() > 3.f && MovementComp->GetCurrentAcceleration() != FVector::Zero();
+	}
+
+	return false;
+}
+
+void AEveCharacter::Move(const FInputActionValue& Values)
 {
 	FVector2D MovementVector = Values.Get<FVector2D>();
+
+	if (StateComponent->GetCurrentState() != SBEveTags::Eve_State_Walking)
+	{
+		StateComponent->SetState(SBEveTags::Eve_State_Walking);
+	}
 
 	if (Controller != nullptr)
 	{
@@ -90,7 +121,7 @@ void ASBCharacter::Move(const FInputActionValue& Values)
 	}
 }
 
-void ASBCharacter::Look(const FInputActionValue& Values)
+void AEveCharacter::Look(const FInputActionValue& Values)
 {
 	FVector2D LookDirection = Values.Get<FVector2D>();
 
@@ -98,6 +129,36 @@ void ASBCharacter::Look(const FInputActionValue& Values)
 	{
 		AddControllerYawInput(LookDirection.X);
 		AddControllerPitchInput(LookDirection.Y);
+	}
+}
+
+void AEveCharacter::Running()
+{
+	if (IsMoving())
+	{
+		if (StateComponent->GetCurrentState() != SBEveTags::Eve_State_Running)
+		{
+			StateComponent->SetState(SBEveTags::Eve_State_Running);
+		}
+
+		GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
+	}
+	else
+	{
+		StopRunning();
+	}
+}
+
+void AEveCharacter::StopRunning()
+{
+	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+}
+
+void AEveCharacter::Idle()
+{
+	if (StateComponent->GetCurrentState() != SBEveTags::Eve_State_Idle)
+	{
+		StateComponent->SetState(SBEveTags::Eve_State_Idle);
 	}
 }
 

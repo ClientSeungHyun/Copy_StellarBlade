@@ -2,7 +2,6 @@
 
 
 #include "Components/SBStateComponent.h"
-
 #include "Kismet/KismetSystemLibrary.h"
 
 USBStateComponent::USBStateComponent()
@@ -15,8 +14,6 @@ USBStateComponent::USBStateComponent()
 void USBStateComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-
 }
 
 

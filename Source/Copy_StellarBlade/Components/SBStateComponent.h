@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
@@ -53,6 +52,5 @@ public:
 
 	/** 현재 State가 TagsToCheck의 어떤것과 같은지 체크 [OR] */
 	bool IsCurrentStateEqualToAny(const FGameplayTagContainer& TagsToCheck) const;
-
 
 };

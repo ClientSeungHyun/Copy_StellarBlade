@@ -11,14 +11,14 @@ public class Copy_StellarBlade : ModuleRules
 		PublicIncludePaths.AddRange(new string[] { "Copy_StellarBlade" });
 
 		PublicDependencyModuleNames.AddRange(new string[] 
-		{ 
+		{
 			"Core", 
 			"CoreUObject", 
 			"Engine", 
 			"InputCore", 
-			"EnhancedInput", 
-			"GameplayTags" 
-		});
+			"EnhancedInput",
+            "GamePlayTags"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
