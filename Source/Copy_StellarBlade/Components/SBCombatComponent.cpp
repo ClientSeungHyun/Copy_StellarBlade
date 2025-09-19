@@ -3,7 +3,7 @@
 
 #include "Components/SBCombatComponent.h"
 
-#include "Character/SBCharacter.h"
+#include "Character/EveCharacter.h"
 #include "Equipments/SBWeapon.h"
 #include "Items/SBPickupItem.h"
 
@@ -32,7 +32,7 @@ void USBCombatComponent::SetWeapon(ASBWeapon* NewWeapon)
     // 이미 무기를 가지고 있으면 PickupItem으로 만들어서 떨군다.
     if (::IsValid(MainWeapon))
     {
-        if (ASBCharacter* OwnerCharacter = Cast<ASBCharacter>(GetOwner()))
+        if (AEveCharacter* OwnerCharacter = Cast<AEveCharacter>(GetOwner()))
         {
             ASBPickupItem* PickupItem = GetWorld()->SpawnActorDeferred<ASBPickupItem>(ASBPickupItem::StaticClass(), OwnerCharacter->GetActorTransform(), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
             PickupItem->SetEquipmentClass(MainWeapon->GetClass());

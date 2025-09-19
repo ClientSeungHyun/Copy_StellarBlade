@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "SBCharacter.generated.h"
+#include "EveCharacter.generated.h"
 
 class USBStateComponent;
 class USBEveAtrributeComponent;
 class USB_Eve_AnimInstance;
 
 UCLASS()
-class COPY_STELLARBLADE_API ASBCharacter : public ACharacter
+class COPY_STELLARBLADE_API AEveCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -57,7 +57,7 @@ protected:
 	float NormalSpeed = 500.f;
 
 public:
-	ASBCharacter();
+	AEveCharacter();
 
 protected:
 	virtual void BeginPlay() override;

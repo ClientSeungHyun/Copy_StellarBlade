@@ -3,7 +3,7 @@
 
 #include "Animations/SBAnimInstance.h"
 
-#include "Character/SBCharacter.h"
+#include "Character/EveCharacter.h"
 #include "Components/SBStateComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -48,7 +48,7 @@ void USBAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void USBAnimInstance::AnimNotify_ResetMovementInput()
 {
-    //if (const ASBCharacter* LocalCharacter = Cast<ASBCharacter>(GetOwningActor()))
+    //if (const AEveCharacter* LocalCharacter = Cast<AEveCharacter>(GetOwningActor()))
     //{
     //    LocalCharacter->GetStateComponent()->ToggleMovementInput(true);
     //}
@@ -56,7 +56,7 @@ void USBAnimInstance::AnimNotify_ResetMovementInput()
 
 void USBAnimInstance::AnimNotify_ResetState()
 {
-    //if (const ASBCharacter* LocalCharacter = Cast<ASBCharacter>(GetOwningActor()))
+    //if (const AEveCharacter* LocalCharacter = Cast<AEveCharacter>(GetOwningActor()))
     //{
     //    LocalCharacter->GetStateComponent()->ClearState();
     //}
