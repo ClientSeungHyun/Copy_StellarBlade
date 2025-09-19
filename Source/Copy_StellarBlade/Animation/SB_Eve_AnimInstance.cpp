@@ -41,13 +41,18 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
  //   bIsWalking = GroundSpeed > 3.f && MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector;
     if (GroundSpeed > 500.f)
     {
-        bIsWalking = false;
+        bIsRunning = false;
+        bIsSprinting = true;
+    }
+    else if(GroundSpeed > 1.f)
+    {
         bIsRunning = true;
+        bIsSprinting = false;
     }
     else
     {
-        bIsWalking = true;
         bIsRunning = false;
+        bIsSprinting = false;
     }
 
     bIsFalling = MovementComponent->IsFalling();

@@ -28,13 +28,13 @@ protected:
 	float GroundSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
-	bool bIsWalking;
+	bool bIsRunning;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	bool bIsFalling;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
-	bool bIsRunning;
+	bool bIsSprinting;
 
 public:
 	USB_Eve_AnimInstance();

@@ -50,11 +50,11 @@ private:
 protected:
 	/** 龙林 加档 */
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
-	float SprintingSpeed = 750.f;
+	float SprintingSpeed = 600.f;
 
 	/** 老馆 加档 */
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
-	float NormalSpeed = 500.f;
+	float NormalSpeed = 400.f;
 
 public:
 	AEveCharacter();
