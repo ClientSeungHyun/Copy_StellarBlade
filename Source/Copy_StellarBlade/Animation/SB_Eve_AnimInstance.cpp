@@ -4,6 +4,9 @@
 #include "Animation/SB_Eve_AnimInstance.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/SBStateComponent.h"
+#include "SBEveTags.h"
+#include "Character/EveCharacter.h"
 
 USB_Eve_AnimInstance::USB_Eve_AnimInstance()
 {
@@ -13,11 +16,12 @@ void USB_Eve_AnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
 
-    Character = Cast<ACharacter>(GetOwningActor());
+    Player = Cast<AEveCharacter>(GetOwningActor());
 
-    if (Character)
+    if (Player)
     {
-        MovementComponent = Character->GetCharacterMovement();
+        MovementComponent = Player->GetCharacterMovement();
+        PlayerStateComp = Player->GetStateComponent();
     }
 }
 
@@ -25,7 +29,7 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
     Super::NativeUpdateAnimation(DeltaSeconds);
 
-    if (Character == nullptr)
+    if (Player == nullptr)
     {
         return;
     }
@@ -38,22 +42,50 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     Velocity = MovementComponent->Velocity;
     GroundSpeed = Velocity.Size2D();
 
- //   bIsWalking = GroundSpeed > 3.f && MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector;
-    if (GroundSpeed > 500.f)
-    {
+    bIsFalling = MovementComponent->IsFalling();
+
+   /* if (GroundSpeed > 500.f && bIsFalling == false){
         bIsRunning = false;
         bIsSprinting = true;
     }
-    else if(GroundSpeed > 1.f)
+     else if(GroundSpeed > 1.f && bIsFalling == false)
     {
         bIsRunning = true;
         bIsSprinting = false;
-    }
-    else
+    }*/
+
+    /UE_LOG(LogTemp, Warning, TEXT("bIsRunning: %d"), bIsRunning);
+   // UE_LOG(LogTemp, Warning, TEXT("bIsJumpingStart: %d"), bIsJumpingStart);
+
+    if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_JumpStart)
     {
+        bIsJumpingStart = true;
         bIsRunning = false;
         bIsSprinting = false;
     }
 
-    bIsFalling = MovementComponent->IsFalling();
+    if (GroundSpeed < 1.f && bIsFalling == false)
+    {
+        PlayerStateComp->SetState(SBEveTags::Eve_State_Idle);
+    }
+
+    if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Running){
+        bIsRunning = false;
+        bIsSprinting = true;
+        bIsJumpingStart = false;
+    }
+
+    if(PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Walking)
+    {
+        bIsRunning = true;
+        bIsSprinting = false;
+        bIsJumpingStart = false;
+    }
+ 
+    if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Idle)
+    {
+        bIsJumpingStart = false;
+        bIsRunning = false;
+        bIsSprinting = false;
+    }
 }

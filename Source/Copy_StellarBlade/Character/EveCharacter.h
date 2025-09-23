@@ -36,6 +36,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	class UInputAction* RunAction;
 
+	UPROPERTY(EditAnywhere)
+	class UInputAction* JumpAction;
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* BodyMesh;
@@ -56,6 +59,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float NormalSpeed = 400.f;
 
+private:
+	bool isJumping = false;
+
 public:
 	AEveCharacter();
 
@@ -72,6 +78,8 @@ public:
 public:
 	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; };
 
+	UCharacterMovementComponent* MovementComp = nullptr;
+
 protected:
 	/** 캐릭터가 이동중인지 체크 */
 	bool IsMoving() const;
@@ -83,6 +91,8 @@ protected:
 	void Running();
 	/** 질주 중단 */
 	void StopRunning();
-	void Idle();
 
+	void Idle();
+	void NewJump();
+	void CheckLanded();
 };
