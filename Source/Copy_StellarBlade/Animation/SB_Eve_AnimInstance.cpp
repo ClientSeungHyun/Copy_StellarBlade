@@ -54,7 +54,7 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         bIsSprinting = false;
     }*/
 
-    /UE_LOG(LogTemp, Warning, TEXT("bIsRunning: %d"), bIsRunning);
+    //UE_LOG(LogTemp, Warning, TEXT("bIsRunning: %d"), bIsRunning);
    // UE_LOG(LogTemp, Warning, TEXT("bIsJumpingStart: %d"), bIsJumpingStart);
 
     if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_JumpStart)

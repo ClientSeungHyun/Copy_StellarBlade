@@ -13,6 +13,7 @@
 #include "Components/SBEveAtrributeComponent.h"
 #include "Components/SBStateComponent.h"
 #include "Animation/SB_Eve_AnimInstance.h"
+#include "Player/SBEveWeapon.h"
 
 AEveCharacter::AEveCharacter()
 {
@@ -47,12 +48,31 @@ AEveCharacter::AEveCharacter()
 	AttributeComponent = CreateDefaultSubobject<USBEveAtrributeComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<USBStateComponent>(TEXT("State"));
 	MovementComp = GetCharacterMovement();
+
+	
 }
 
 void AEveCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (SwordClass && !Sword)
+	{
+		//FActorSpawnParameters Params;
+		//Params.SpawnCollisionHandlingOverride =
+		//	ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		//Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
+		//	SwordClass,
+		//	GetActorLocation(),
+		//	GetActorRotation(),
+		//	Params);
+		Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
+			SwordClass);
+
+		Sword->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
+		Sword->SetOwner(this);
+	}
 }
 
 void AEveCharacter::Tick(float DeltaTime)
@@ -66,6 +86,11 @@ void AEveCharacter::Tick(float DeltaTime)
 		UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
 		UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
 	}*/
+
+	if (!Sword)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
+	}
 }
 
 void AEveCharacter::NotifyControllerChanged()

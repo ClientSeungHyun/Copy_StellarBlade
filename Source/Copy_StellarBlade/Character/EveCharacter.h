@@ -9,6 +9,7 @@
 class USBStateComponent;
 class USBEveAtrributeComponent;
 class USB_Eve_AnimInstance;
+class ASBEveWeapon;
 
 UCLASS()
 class COPY_STELLARBLADE_API AEveCharacter : public ACharacter
@@ -58,6 +59,12 @@ protected:
 	/** 일반 속도 */
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float NormalSpeed = 400.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TSubclassOf<ASBEveWeapon> SwordClass;
+
+	UPROPERTY()
+	ASBEveWeapon* Sword;
 
 private:
 	bool isJumping = false;
