@@ -8,4 +8,6 @@ namespace SBEveTags
 	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Walking, "Eve.State.Walking");
 	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Running, "Eve.State.Running");
 	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Idle, "Eve.State.Idle");
+	UE_DEFINE_GAMEPLAY_TAG(Eve_State_JumpStart, "Eve.State.JumpStart");
+	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Falling, "Eve.State.Falling");
 }

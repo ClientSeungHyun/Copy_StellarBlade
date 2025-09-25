@@ -47,8 +47,15 @@ void USBStateComponent::MovementInputEnableAction()
 	ClearState();
 }
 
+void USBStateComponent::SetState(const FGameplayTag NewState)
+{
+	PreState = CurrentState;
+	CurrentState = NewState;
+}
+
 void USBStateComponent::ClearState()
 {
+	PreState = FGameplayTag::EmptyTag;;
 	CurrentState = FGameplayTag::EmptyTag;
 }
 

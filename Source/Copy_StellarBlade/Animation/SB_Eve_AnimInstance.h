@@ -7,6 +7,8 @@
 #include "SB_Eve_AnimInstance.generated.h"
 
 class UCharacterMovementComponent;
+class USBStateComponent;
+class AEveCharacter;
 
 UCLASS()
 class COPY_STELLARBLADE_API USB_Eve_AnimInstance : public UAnimInstance
@@ -15,7 +17,7 @@ class COPY_STELLARBLADE_API USB_Eve_AnimInstance : public UAnimInstance
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "References")
-	ACharacter* Character;
+	AEveCharacter* Player;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "References")
 	UCharacterMovementComponent* MovementComponent;
@@ -28,14 +30,20 @@ protected:
 	float GroundSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
-	bool bIsWalking;
+	bool bIsRunning;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	bool bIsFalling;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
-	bool bIsRunning;
+	bool bIsSprinting;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	bool bIsJumpingStart;
+
+
+private:
+	USBStateComponent* PlayerStateComp = nullptr;
 public:
 	USB_Eve_AnimInstance();
 

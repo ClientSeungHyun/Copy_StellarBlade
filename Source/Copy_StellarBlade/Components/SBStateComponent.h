@@ -22,6 +22,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	FGameplayTag CurrentState;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	FGameplayTag PreState;
+
 
 public:
 	USBStateComponent();
@@ -44,8 +47,9 @@ protected:
 	void MovementInputEnableAction();
 
 public:
-	FORCEINLINE void SetState(const FGameplayTag NewState) { CurrentState = NewState; };
+	FORCEINLINE void SetState(const FGameplayTag NewState);
 	FORCEINLINE FGameplayTag GetCurrentState() const { return CurrentState; };
+	FORCEINLINE FGameplayTag GetPreState() const { return PreState; };
 
 	/** 현재 상태 초기화 */
 	void ClearState();

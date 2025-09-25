@@ -13,6 +13,7 @@
 #include "Components/SBEveAtrributeComponent.h"
 #include "Components/SBStateComponent.h"
 #include "Animation/SB_Eve_AnimInstance.h"
+#include "Player/SBEveWeapon.h"
 
 AEveCharacter::AEveCharacter()
 {
@@ -30,6 +31,8 @@ AEveCharacter::AEveCharacter()
 	/** 이동, 감속 속도 */
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+	GetCharacterMovement()->JumpZVelocity = 500;
+
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
@@ -44,19 +47,50 @@ AEveCharacter::AEveCharacter()
 
 	AttributeComponent = CreateDefaultSubobject<USBEveAtrributeComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<USBStateComponent>(TEXT("State"));
+	MovementComp = GetCharacterMovement();
 
+	
 }
 
 void AEveCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (SwordClass && !Sword)
+	{
+		//FActorSpawnParameters Params;
+		//Params.SpawnCollisionHandlingOverride =
+		//	ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		//Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
+		//	SwordClass,
+		//	GetActorLocation(),
+		//	GetActorRotation(),
+		//	Params);
+		Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
+			SwordClass);
+
+		Sword->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
+		Sword->SetOwner(this);
+	}
 }
 
 void AEveCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	CheckLanded();
+
+	/*if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
+		UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
+	}*/
+
+	if (!Sword)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
+	}
 }
 
 void AEveCharacter::NotifyControllerChanged()
@@ -79,19 +113,21 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::NewJump);
+
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
 
-
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
+		
 	}
 
 }
 
 bool AEveCharacter::IsMoving() const
 {
-	if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+	if (MovementComp)
 	{
 		return MovementComp->Velocity.Size2D() > 3.f && MovementComp->GetCurrentAcceleration() != FVector::Zero();
 	}
@@ -103,7 +139,7 @@ void AEveCharacter::Move(const FInputActionValue& Values)
 {
 	FVector2D MovementVector = Values.Get<FVector2D>();
 
-	if (StateComponent->GetCurrentState() != SBEveTags::Eve_State_Walking)
+	if (isJumping == false)
 	{
 		StateComponent->SetState(SBEveTags::Eve_State_Walking);
 	}
@@ -136,7 +172,7 @@ void AEveCharacter::Running()
 {
 	if (IsMoving())
 	{
-		if (StateComponent->GetCurrentState() != SBEveTags::Eve_State_Running)
+		if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_Walking)
 		{
 			StateComponent->SetState(SBEveTags::Eve_State_Running);
 		}
@@ -160,5 +196,32 @@ void AEveCharacter::Idle()
 	{
 		StateComponent->SetState(SBEveTags::Eve_State_Idle);
 	}
+}
+
+void AEveCharacter::NewJump()
+{
+	if(isJumping == false)
+	{
+		isJumping = true;
+		StateComponent->SetState(SBEveTags::Eve_State_JumpStart);
+		Jump();
+	}
+}
+
+void AEveCharacter::CheckLanded()
+{
+	bool bIsFalling = MovementComp->IsFalling();
+
+	if (bIsFalling)
+	{
+		StateComponent->SetState(SBEveTags::Eve_State_Falling);
+	}
+
+	if (isJumping && bIsFalling == false)
+	{
+		isJumping = false;
+		Idle();
+	}
+
 }
 
