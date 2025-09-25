@@ -21,6 +21,10 @@ void USBAnimInstance::NativeInitializeAnimation()
     if (Character)
     {
         MovementComponent = Character->GetCharacterMovement();
+
+        MovementComponent->RotationRate = FRotator(0.f, 0.f, 20.f); // 초당 회전 속도
+        MovementComponent->bUseControllerDesiredRotation = false;
+        MovementComponent->bOrientRotationToMovement = true;
     }
 }
 
@@ -41,7 +45,8 @@ void USBAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     Velocity = MovementComponent->Velocity;
     GroundSpeed = Velocity.Size2D();
 
-    bShouldMove = GroundSpeed > 3.f && MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector;
+    //FVector Acc = MovementComponent->GetCurrentAcceleration();
+    bShouldMove = GroundSpeed > 3.f && Velocity != FVector::ZeroVector;
 
     bIsFalling = MovementComponent->IsFalling();
 }
@@ -60,4 +65,14 @@ void USBAnimInstance::AnimNotify_ResetState()
     //{
     //    LocalCharacter->GetStateComponent()->ClearState();
     //}
+}
+
+void USBAnimInstance::UpdateCombatMode(const ECombatType InCombatType)
+{
+    CombatType = InCombatType;
+}
+
+void USBAnimInstance::OnChangedCombat(const bool bInCombatEnabled)
+{
+    bCombatEnabled = bInCombatEnabled;
 }

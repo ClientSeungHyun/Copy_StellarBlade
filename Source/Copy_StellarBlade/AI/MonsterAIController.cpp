@@ -1,34 +1,38 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AI/SBEnemyAIController.h"
+#include "AI/MonsterAIController.h"
 
 #include "BehaviorTree/BlackboardComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Character/MonsterCharacter.h"
 
-ASBEnemyAIController::ASBEnemyAIController()
+AMonsterAIController::AMonsterAIController()
 {
 	AIPerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>("AIPerctption");
 }
 
-void ASBEnemyAIController::OnPossess(APawn* InPawn)
+void AMonsterAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+
+	ControlledEnemy = Cast<AMonsterCharacter>(InPawn);
 
 	RunBehaviorTree(BehaviorTreeAsset);
 
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::UpdateTarget, 0.1f, true);
 }
 
-void ASBEnemyAIController::OnUnPossess()
+void AMonsterAIController::OnUnPossess()
 {
+	ControlledEnemy = nullptr;
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 	Super::OnUnPossess();
 }
 
-void ASBEnemyAIController::UpdateTarget() const
+void AMonsterAIController::UpdateTarget() const
 {
 	TArray<AActor*> OutActors;
 	AIPerceptionComponent->GetKnownPerceivedActors(nullptr, OutActors);
@@ -38,15 +42,17 @@ void ASBEnemyAIController::UpdateTarget() const
 	if (OutActors.Contains(PlayerCharacter))
 	{
 		SetTarget(PlayerCharacter);
+		ControlledEnemy->ToggleHealthBarVisibility(true);
 	}
 	else
 	{
 		SetTarget(nullptr);
+		ControlledEnemy->ToggleHealthBarVisibility(false);
 	}
 
 }
 
-void ASBEnemyAIController::SetTarget(AActor* NewTarget) const
+void AMonsterAIController::SetTarget(AActor* NewTarget) const
 {
 	if (IsValid(Blackboard))
 	{

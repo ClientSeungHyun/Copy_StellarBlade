@@ -65,6 +65,11 @@ void USBWeaponCollisionComponent::CollisionTrace()
 
     const FVector Start = WeaponMesh->GetSocketLocation(TraceStartSocketName);
     const FVector End = WeaponMesh->GetSocketLocation(TraceEndSocketName);
+  
+    //if (USkeletalMeshComponent* SkeletalMesh = Cast<USkeletalMeshComponent>(WeaponMesh))
+    //{
+    //    SkeletalMesh->GetBoneLocation(TEXT("asdf"));
+    //}
 
     bool const bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
         GetOwner(),

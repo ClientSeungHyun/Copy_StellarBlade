@@ -28,7 +28,9 @@ enum class ECombatType : uint8
     None,
     SwordShield,
     TwoHanded,
-    MeleeFists
+    MeleeFists,
+    OneTentacle,
+    TwoTentacle
 };
 
 UENUM(BlueprintType)
@@ -36,4 +38,13 @@ enum class EWeaponCollisionType : uint8
 {
     MainCollision,
     SecondCollision,
+};
+
+UENUM(BlueprintType)
+enum class ESBAIBehavior : uint8
+{
+    Idle,
+    Patrol,
+    MeleeAttack,
+    Approach,
 };

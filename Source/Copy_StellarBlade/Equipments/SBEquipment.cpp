@@ -10,7 +10,7 @@ ASBEquipment::ASBEquipment()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EquipmentMesh"));
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("EquipmentMesh"));
 	SetRootComponent(Mesh);
 	Mesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 }
@@ -35,7 +35,7 @@ void ASBEquipment::OnConstruction(const FTransform& Transform)
 
 	if (MeshAsset)
 	{
-		Mesh->SetStaticMesh(MeshAsset);
+		Mesh->SetSkeletalMesh(MeshAsset);
 	}
 }
 

@@ -18,6 +18,10 @@ void USBCombatComponent::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (::IsValid(MainWeapon))
+    {
+        MainWeapon->EquipItem();
+    }
 }
 
 

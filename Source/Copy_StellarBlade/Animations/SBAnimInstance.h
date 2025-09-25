@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SBDefine.h"
 #include "Animation/AnimInstance.h"
 #include "SBAnimInstance.generated.h"
 
@@ -36,6 +37,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	bool bIsFalling;
 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Data")
+	bool bCombatEnabled = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Data")
+	ECombatType CombatType = ECombatType::None;
+
 public:
 	USBAnimInstance();
 
@@ -49,4 +57,11 @@ public:
 	UFUNCTION()
 	void AnimNotify_ResetState();
 
+	// Animation
+public:
+	void UpdateCombatMode(const ECombatType InCombatType);
+
+	// Delegate functions
+protected:
+	void OnChangedCombat(const bool bInCombatEnabled);
 };

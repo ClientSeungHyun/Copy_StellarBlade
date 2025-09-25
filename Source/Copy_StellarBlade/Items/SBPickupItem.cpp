@@ -41,7 +41,7 @@ void ASBPickupItem::OnConstruction(const FTransform& Transform)
 	{
 		if (ASBEquipment* CDO = EquipmentClass->GetDefaultObject<ASBEquipment>())
 		{
-			Mesh->SetStaticMesh(CDO->MeshAsset);
+			//Mesh->SetStaticMesh(CDO->MeshAsset);
 			Mesh->SetSimulatePhysics(true);
 		}
 	}

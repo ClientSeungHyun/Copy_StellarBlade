@@ -4,15 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "SBEnemy.generated.h"
+#include "Interfaces/SBCombatInterface.h"
+#include "MonsterCharacter.generated.h"
 
 
 class USBStateComponent;
 class USBAttributeComponent;
 class ATargetPoint;
+class USBCombatComponent;
+class ASBWeapon;
+class URotationComponent;
+class UWidgetComponent;
 
 UCLASS()
-class COPY_STELLARBLADE_API ASBEnemy : public ACharacter
+class COPY_STELLARBLADE_API AMonsterCharacter : public ACharacter, public ISBCombatInterface
 {
 	GENERATED_BODY()
 
@@ -22,6 +27,20 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	USBStateComponent* StateComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	USBCombatComponent* CombatComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	URotationComponent* RotationComponent;
+
+	/** HealthBar */
+	UPROPERTY(VisibleAnywhere)
+	UWidgetComponent* HealthBarWidgetComponent;
+
+	UPROPERTY(EditAnywhere)
+	float HealthBarOffsetPosY = 100.f;
+
 
 	// Effect Section
 protected:
@@ -52,8 +71,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "AI | Patrol")
 	int32 PatrolIndex = 0;
 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ASBWeapon> DefaultWeaponClass;
+
 public:
-	ASBEnemy();
+	AMonsterCharacter();
 
 protected:
 	virtual void BeginPlay() override;
@@ -62,13 +85,24 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual float TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
-public:
+protected:
 	virtual void OnDeath();
+	void OnAttributeChanged(ESBAttributeType AttributeType, float InValue);
+	void SetupHealthBar();
 
 protected:
 	void ImpactEffect(const FVector& Location);
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
+
+public:
+	//CombatInterface 구현.
+	virtual void ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
+	virtual void DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
+	virtual void PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate) override;
+
+	// 체력바 토글
+	void ToggleHealthBarVisibility(bool bVisibility);
 
 public:
 	FORCEINLINE ATargetPoint* GetPatrolPoint()

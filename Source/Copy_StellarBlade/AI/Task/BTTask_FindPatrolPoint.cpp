@@ -5,7 +5,7 @@
 
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Character/SBEnemy.h"
+#include "Character/MonsterCharacter.h"
 #include "Engine/TargetPoint.h"
 
 EBTNodeResult::Type UBTTask_FindPatrolPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -16,7 +16,7 @@ EBTNodeResult::Type UBTTask_FindPatrolPoint::ExecuteTask(UBehaviorTreeComponent&
 		return EBTNodeResult::Failed;
 	}
 
-	if (ASBEnemy* Character = Cast<ASBEnemy>(ControlledPawn))
+	if (AMonsterCharacter* Character = Cast<AMonsterCharacter>(ControlledPawn))
 	{
 		// TargetPoint의 Location을 Blackboard에 저장.
 		OwnerComp.GetBlackboardComponent()->SetValueAsVector(BlackboardLocation.SelectedKeyName, Character->GetPatrolPoint()->GetActorLocation());

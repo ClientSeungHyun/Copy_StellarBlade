@@ -13,10 +13,10 @@ class COPY_STELLARBLADE_API ASBEquipment : public AActor
 	
 public:
 	UPROPERTY(EditAnywhere, Category = "Equipment | Mesh")
-	UStaticMesh* MeshAsset;
+	USkeletalMesh* MeshAsset;
 
 	UPROPERTY(VisibleAnywhere, Category = "Equipment | Mesh")
-	UStaticMeshComponent* Mesh;
+	USkeletalMeshComponent* Mesh;
 
 public:
 	ASBEquipment();

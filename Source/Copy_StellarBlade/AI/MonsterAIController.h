@@ -4,13 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "SBEnemyAIController.generated.h"
+#include "MonsterAIController.generated.h"
 
-/**
- * 
- */
+class AMonsterCharacter;
+
 UCLASS()
-class COPY_STELLARBLADE_API ASBEnemyAIController : public AAIController
+class COPY_STELLARBLADE_API AMonsterAIController : public AAIController
 {
 	GENERATED_BODY()
 	
@@ -24,8 +23,11 @@ protected:
 
 	FTimerHandle TimerHandle;
 
+	UPROPERTY()
+	AMonsterCharacter* ControlledEnemy;
+
 public:
-	ASBEnemyAIController();
+	AMonsterAIController();
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;

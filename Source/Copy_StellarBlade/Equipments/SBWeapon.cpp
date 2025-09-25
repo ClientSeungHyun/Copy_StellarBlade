@@ -10,6 +10,7 @@
 #include "Components/SBWeaponCollisionComponent.h"
 #include "Components/SBCombatComponent.h"
 #include "Animations/SBAnimInstance.h"
+#include "GameFramework/Character.h"
 #include "Data/SBMontageActionData.h"
 
 ASBWeapon::ASBWeapon()
@@ -47,14 +48,14 @@ void ASBWeapon::EquipItem()
 		// 무기의 충돌 트레이스 컴포넌트에 무기 메쉬 컴포넌트를 설정합니다.
 		WeaponCollision->SetWeaponMesh(Mesh);
 
-		//// 장착한 무기의 CombatType으로 업데이트.
-		//if (ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
-		//{
-		//	if (USBAnimInstance* Anim = Cast<USBAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
-		//	{
-		//		Anim->UpdateCombatMode(CombatType);
-		//	}
-		//}
+		// 장착한 무기의 CombatType으로 업데이트.
+		if (ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
+		{
+			if (USBAnimInstance* Anim = Cast<USBAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
+			{
+				//Anim->UpdateCombatMode(CombatType);
+			}
+		}
 
 
 		// 무기를 소유한 OwnerActor를 충돌에서 무시합니다.

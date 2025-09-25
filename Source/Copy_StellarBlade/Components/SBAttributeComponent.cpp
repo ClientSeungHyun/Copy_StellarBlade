@@ -67,6 +67,7 @@ void USBAttributeComponent::BroadcastAttributeChanged(ESBAttributeType InAttribu
 			break;
 
 		case ESBAttributeType::Health:
+			Ratio = GetHealthRatio();
 			break;
 		}
 

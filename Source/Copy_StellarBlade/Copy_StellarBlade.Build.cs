@@ -17,7 +17,8 @@ public class Copy_StellarBlade : ModuleRules
 			"Engine", 
 			"InputCore", 
 			"EnhancedInput",
-            "GamePlayTags"
+            "GamePlayTags",
+			"Json"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

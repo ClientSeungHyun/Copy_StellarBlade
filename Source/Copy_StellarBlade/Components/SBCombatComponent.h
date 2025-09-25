@@ -24,6 +24,9 @@ protected:
 	UPROPERTY()
 	ASBWeapon* MainWeapon;
 
+	UPROPERTY()
+	ASBWeapon* SubWeapon;
+
 	/* 전투 활성화 상태인지? */
 	UPROPERTY(EditAnywhere)
 	bool bCombatEnabled = false;

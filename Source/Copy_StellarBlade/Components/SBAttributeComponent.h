@@ -58,6 +58,7 @@ public:
 
 	/** 스테미나 비율 계산 */
 	FORCEINLINE float GetStaminaRatio() const { return BaseStamina / MaxStamina; };
+	FORCEINLINE float GetHealthRatio() const { return BaseHealth / MaxHealth; };
 
 	/** 스테미너가 충분한지 체크 */
 	bool CheckHasEnoughStamina(float StaminaCost) const;
