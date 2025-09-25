@@ -202,15 +202,23 @@ void AMonsterCharacter::ActivateWeaponCollision(EWeaponType InWeaponType)
 {
 	if (CombatComponent)
 	{
+
 		switch (InWeaponType)
 		{
 		case EWeaponType::MainWeapon:
-			CombatComponent->GetMainWeapon()->ActivateCollision();
+		{
+			ASBWeapon* Weapon = CombatComponent->GetMainWeapon();
+			if (Weapon)
+				Weapon->ActivateCollision();
 			break;
-
+		}
 		case EWeaponType::SubWeapon:
-			CombatComponent->GetSubWeapon()->ActivateCollision();
+		{
+			ASBWeapon* Weapon = CombatComponent->GetSubWeapon();
+			if (Weapon)
+				Weapon->ActivateCollision();
 			break;
+		}
 		}
 	}
 }
@@ -222,12 +230,19 @@ void AMonsterCharacter::DeactivateWeaponCollision(EWeaponType InWeaponType)
 		switch (InWeaponType)
 		{
 		case EWeaponType::MainWeapon:
-			CombatComponent->GetMainWeapon()->DeactivateCollision();
+		{
+			ASBWeapon* Weapon = CombatComponent->GetMainWeapon();
+			if (Weapon)
+				Weapon->DeactivateCollision();
 			break;
-
+		}
 		case EWeaponType::SubWeapon:
-			CombatComponent->GetSubWeapon()->DeactivateCollision();
+		{
+			ASBWeapon* Weapon = CombatComponent->GetSubWeapon();
+			if (Weapon)
+				Weapon->DeactivateCollision();
 			break;
+		}
 		}
 	}
 }

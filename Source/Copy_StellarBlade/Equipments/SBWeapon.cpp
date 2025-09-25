@@ -90,17 +90,18 @@ UAnimMontage* ASBWeapon::GetHitReactMontage(const AActor* Attacker) const
 		HitDirection = EHitDirection::Front;
 		UE_LOG(LogTemp, Log, TEXT("Front"));
 	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
-	{
-		HitDirection = EHitDirection::Left;
-		UE_LOG(LogTemp, Log, TEXT("Left"));
-	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f)
 		|| UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
 	{
 		HitDirection = EHitDirection::Back;
 		UE_LOG(LogTemp, Log, TEXT("Back"));
 	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
+	{
+		HitDirection = EHitDirection::Left;
+		UE_LOG(LogTemp, Log, TEXT("Left"));
+	}
+
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
 	{
 		HitDirection = EHitDirection::Right;

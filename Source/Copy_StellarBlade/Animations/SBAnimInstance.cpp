@@ -53,18 +53,18 @@ void USBAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void USBAnimInstance::AnimNotify_ResetMovementInput()
 {
-    //if (const AEveCharacter* LocalCharacter = Cast<AEveCharacter>(GetOwningActor()))
-    //{
-    //    LocalCharacter->GetStateComponent()->ToggleMovementInput(true);
-    //}
+    if (const AEveCharacter* LocalCharacter = Cast<AEveCharacter>(GetOwningActor()))
+    {
+        LocalCharacter->GetStateComponent()->ToggleMovementInput(true);
+    }
 }
 
 void USBAnimInstance::AnimNotify_ResetState()
 {
-    //if (const AEveCharacter* LocalCharacter = Cast<AEveCharacter>(GetOwningActor()))
-    //{
-    //    LocalCharacter->GetStateComponent()->ClearState();
-    //}
+    if (const AEveCharacter* LocalCharacter = Cast<AEveCharacter>(GetOwningActor()))
+    {
+        LocalCharacter->GetStateComponent()->ClearState();
+    }
 }
 
 void USBAnimInstance::UpdateCombatMode(const ECombatType InCombatType)
