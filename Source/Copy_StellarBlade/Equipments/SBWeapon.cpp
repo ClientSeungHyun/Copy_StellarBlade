@@ -15,11 +15,13 @@
 
 ASBWeapon::ASBWeapon()
 {
-	WeaponCollision = CreateDefaultSubobject<USBWeaponCollisionComponent>("MainCollision");
-	WeaponCollision->OnHitActor.AddUObject(this, &ThisClass::OnHitActor);
+	for (int i = 0; i < WeaponCollisionCount; ++i)
+	{
+		USBWeaponCollisionComponent* WeaponCollision = CreateDefaultSubobject<USBWeaponCollisionComponent>("MainCollision");
+		WeaponCollision->OnHitActor.AddUObject(this, &ThisClass::OnHitActor);
 
-	SecondWeaponCollision = CreateDefaultSubobject<USBWeaponCollisionComponent>("SecondCollision");
-	SecondWeaponCollision->OnHitActor.AddUObject(this, &ThisClass::OnHitActor);
+		WeaponCollisions.Add(WeaponCollision);
+	}
 
 	StaminaCostMap.Add(SBGameplayTags::Character_Attack_Light, 7.f);
 	StaminaCostMap.Add(SBGameplayTags::Character_Attack_Running, 12.f);
@@ -31,7 +33,7 @@ ASBWeapon::ASBWeapon()
 	DamageMultiplierMap.Add(SBGameplayTags::Character_Attack_Special, 2.1f);
 }
 
-void ASBWeapon::EquipItem()
+void ASBWeapon::EquipItem(bool isSubWeapon)
 {
 	Super::EquipItem();
 
@@ -39,14 +41,17 @@ void ASBWeapon::EquipItem()
 
 	if (CombatComponent)
 	{
-		CombatComponent->SetWeapon(this);
+		CombatComponent->SetWeapon(this, isSubWeapon);
 
 		const FName AttachSocket = CombatComponent->IsCombatEnabled() ? EquipSocketName : UnequipSocketName;
 
 		AttachToOwner(AttachSocket);
 
-		// 무기의 충돌 트레이스 컴포넌트에 무기 메쉬 컴포넌트를 설정합니다.
-		WeaponCollision->SetWeaponMesh(Mesh);
+		for (auto& WeaponCollision : WeaponCollisions)
+		{
+			WeaponCollision->SetWeaponMesh(Mesh);
+			WeaponCollision->AddIgnoredActor(GetOwner());
+		}
 
 		// 장착한 무기의 CombatType으로 업데이트.
 		if (ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
@@ -56,10 +61,6 @@ void ASBWeapon::EquipItem()
 				//Anim->UpdateCombatMode(CombatType);
 			}
 		}
-
-
-		// 무기를 소유한 OwnerActor를 충돌에서 무시합니다.
-		WeaponCollision->AddIgnoredActor(GetOwner());
 	}
 }
 
@@ -171,28 +172,20 @@ void ASBWeapon::OnHitActor(const FHitResult& Hit)
 		nullptr);
 }
 
-void ASBWeapon::ActivateCollision(EWeaponCollisionType InCollisionType)
+void ASBWeapon::ActivateCollision()
 {
-	switch (InCollisionType)
-	{
-	case EWeaponCollisionType::MainCollision:
-		WeaponCollision->TurnOnCollision();
-		break;
-	case EWeaponCollisionType::SecondCollision:
-		SecondWeaponCollision->TurnOnCollision();
-		break;
-	}
+	if (WeaponCollisions.IsEmpty())
+		return;
+
+	for (const auto& Col : WeaponCollisions)
+		Col->TurnOnCollision();
 }
 
-void ASBWeapon::DeactivateCollision(EWeaponCollisionType InCollisionType)
+void ASBWeapon::DeactivateCollision()
 {
-	switch (InCollisionType)
-	{
-	case EWeaponCollisionType::MainCollision:
-		WeaponCollision->TurnOffCollision();
-		break;
-	case EWeaponCollisionType::SecondCollision:
-		SecondWeaponCollision->TurnOffCollision();
-		break;
-	}
+	if (WeaponCollisions.IsEmpty())
+		return;
+
+	for (const auto& Col : WeaponCollisions)
+		Col->TurnOffCollision();
 }

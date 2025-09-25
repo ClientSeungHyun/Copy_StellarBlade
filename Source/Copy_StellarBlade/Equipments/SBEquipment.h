@@ -30,7 +30,7 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 public:
-	virtual void EquipItem();
+	virtual void EquipItem(bool isSubWeapon = false);
 
 	virtual void UnequipItem();
 

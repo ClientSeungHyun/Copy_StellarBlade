@@ -41,28 +41,12 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float HealthBarOffsetPosY = 100.f;
 
-
-	// Effect Section
 protected:
 	UPROPERTY(EditAnywhere, Category = "Effect")
 	USoundCue* ImpactSound;
 
 	UPROPERTY(EditAnywhere, Category = "Effect")
 	UParticleSystem* ImpactParticle;
-
-	// Montage Section
-protected:
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimFront;
-
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimBack;
-
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimLeft;
-
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimRight;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "AI | Patrol")
@@ -73,7 +57,7 @@ protected:
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<ASBWeapon> DefaultWeaponClass;
+	TArray<TSubclassOf<ASBWeapon>> DefaultWeaponClass;
 
 public:
 	AMonsterCharacter();
@@ -93,12 +77,12 @@ protected:
 protected:
 	void ImpactEffect(const FVector& Location);
 	void HitReaction(const AActor* Attacker);
-	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
 
 public:
 	//CombatInterface 구현.
-	virtual void ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
-	virtual void DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
+	virtual void ActivateWeaponCollision(EWeaponType InWeaponType) override;
+	virtual void DeactivateWeaponCollision(EWeaponType InWeaponType) override;
+
 	virtual void PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate) override;
 
 	// 체력바 토글

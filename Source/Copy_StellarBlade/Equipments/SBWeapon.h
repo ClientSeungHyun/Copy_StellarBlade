@@ -34,11 +34,11 @@ protected:
 
 	// Component Section
 protected:
-	UPROPERTY(VisibleAnywhere)
-	USBWeaponCollisionComponent* WeaponCollision;
+	UPROPERTY(EditAnywhere)
+	int32 WeaponCollisionCount = 1;
 
 	UPROPERTY(VisibleAnywhere)
-	USBWeaponCollisionComponent* SecondWeaponCollision;
+	TArray<USBWeaponCollisionComponent*> WeaponCollisions;
 
 protected:
 	UPROPERTY()
@@ -62,7 +62,7 @@ public:
 
 
 public:
-	virtual void EquipItem() override;
+	virtual void EquipItem(bool isSubWeapon = false) override;
 
 	UAnimMontage* GetMontageForTag(const FGameplayTag& Tag, const int32 Index = 0) const;
 	UAnimMontage* GetRandomMontageForTag(const FGameplayTag& Tag) const;
@@ -73,12 +73,12 @@ public:
 
 	FORCEINLINE FName GetEquipSocketName() const { return EquipSocketName; };
 	FORCEINLINE FName GetUnequipSocketName() const { return UnequipSocketName; };
-	FORCEINLINE USBWeaponCollisionComponent* GetCollision() const { return WeaponCollision; };
+	FORCEINLINE USBWeaponCollisionComponent* GetCollision(int32 CollisionNum) const { return WeaponCollisions[CollisionNum]; };
 	FORCEINLINE ECombatType GetCombatType() const { return CombatType; };
 
 public:
-	virtual void ActivateCollision(EWeaponCollisionType InCollisionType);
-	virtual void DeactivateCollision(EWeaponCollisionType InCollisionType);
+	virtual void ActivateCollision();
+	virtual void DeactivateCollision();
 
 public:
 	/** 무기의 Collision에 검출된 Actor에 Damage를 전달 */

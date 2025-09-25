@@ -45,13 +45,14 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	void SetWeapon(ASBWeapon* NewWeapon);
+	void SetWeapon(ASBWeapon* NewWeapon, bool isSubWeapon = false);
 
 public:
 	FORCEINLINE bool IsCombatEnabled() const { return bCombatEnabled; }
 	void SetCombatEnabled(const bool bEnabled);
 
 	FORCEINLINE ASBWeapon* GetMainWeapon() const { return MainWeapon; };
+	FORCEINLINE ASBWeapon* GetSubWeapon() const { return SubWeapon; };
 
 	FORCEINLINE FGameplayTag GetLastAttackType() const { return LastAttackType; };
 	FORCEINLINE void SetLastAttackType(const FGameplayTag& NewAttackTypeTag) { LastAttackType = NewAttackTypeTag; };

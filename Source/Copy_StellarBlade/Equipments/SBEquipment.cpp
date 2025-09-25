@@ -39,7 +39,7 @@ void ASBEquipment::OnConstruction(const FTransform& Transform)
 	}
 }
 
-void ASBEquipment::EquipItem()
+void ASBEquipment::EquipItem(bool isSubWeapon)
 {
 }
 

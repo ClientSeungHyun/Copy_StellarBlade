@@ -6,22 +6,16 @@
 #include "Equipments/SBWeapon.h"
 #include "TentacleWeapon.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class COPY_STELLARBLADE_API ATentacleWeapon : public ASBWeapon
 {
 	GENERATED_BODY()
-	
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | Socket")
-	TArray<FName> EquipSocketNames;
 
-	// Component Section
-protected:
-	UPROPERTY(VisibleAnywhere)
-	TArray<USBWeaponCollisionComponent*> TentacleWeaponCollisions;
+public:
+
+	UPROPERTY(EditAnywhere);
+	TArray<FName> Array_TraceStartEndName;
 
 public:
 	ATentacleWeapon();
@@ -30,5 +24,5 @@ public:
 	virtual void BeginPlay() override;
 
 public:
-	virtual void EquipItem() override;
+	virtual void EquipItem(bool isSubWeapon = false) override;
 };

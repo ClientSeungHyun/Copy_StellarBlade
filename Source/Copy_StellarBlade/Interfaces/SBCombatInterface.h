@@ -25,9 +25,9 @@ class COPY_STELLARBLADE_API ISBCombatInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) = 0;
+	virtual void ActivateWeaponCollision(EWeaponType InWeaponType) = 0;
 
-	virtual void DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) = 0;
+	virtual void DeactivateWeaponCollision(EWeaponType InWeaponType) = 0;
 
 	virtual void PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate) {};
 };

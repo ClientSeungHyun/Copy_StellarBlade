@@ -20,6 +20,9 @@ UAnimMontage* USBMontageActionData::GetMontageForTag(const FGameplayTag& GroupTa
 
 UAnimMontage* USBMontageActionData::GetRandomMontageForTag(const FGameplayTag& GroupTag) const
 {
+	if (MontageGroupMap.IsEmpty())
+		return nullptr;
+
 	if (MontageGroupMap.Contains(GroupTag))
 	{
 		const FSBMontageGroup& MontageGroup = MontageGroupMap[GroupTag];

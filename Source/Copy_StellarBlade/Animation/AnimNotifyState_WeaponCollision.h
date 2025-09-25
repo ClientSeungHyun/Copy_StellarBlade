@@ -16,8 +16,9 @@ class COPY_STELLARBLADE_API UAnimNotifyState_WeaponCollision : public UAnimNotif
 	GENERATED_BODY()
 
 protected:
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EWeaponCollisionType CollisionType = EWeaponCollisionType::MainCollision;
+	EWeaponType WeaponType = EWeaponType::MainWeapon;
 
 public:
 	UAnimNotifyState_WeaponCollision(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());

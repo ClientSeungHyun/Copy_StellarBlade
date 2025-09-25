@@ -34,6 +34,13 @@ enum class ECombatType : uint8
 };
 
 UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+    MainWeapon,
+    SubWeapon,
+};
+
+UENUM(BlueprintType)
 enum class EWeaponCollisionType : uint8
 {
     MainCollision,
@@ -47,4 +54,18 @@ enum class ESBAIBehavior : uint8
     Patrol,
     MeleeAttack,
     Approach,
+};
+
+UENUM(BlueprintType)
+enum class EWeaponMeshType : uint8
+{
+    Skeletal,
+    Static,
+};
+
+UENUM(BlueprintType)
+enum class EAttachmentType : uint8
+{
+    Bone,
+    Socket,
 };

@@ -26,8 +26,7 @@ AMonsterCharacter::AMonsterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	bUseControllerRotationYaw = false;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+
 
 	// HealthBar
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
@@ -54,20 +53,39 @@ void AMonsterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
+	bUseControllerRotationYaw = false;
+
 	HealthBarWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, HealthBarOffsetPosY));
 
-	// 무기 장착
-	if (DefaultWeaponClass)
+	if (!DefaultWeaponClass.IsEmpty())
 	{
-		FActorSpawnParameters Params;
-		Params.Owner = this;
+		// 기본 무기 Array에서 2개까지만 서브 웨폰으로 지정
+		// 0번은 Main 1번은 Sub
+		if (!DefaultWeaponClass.IsEmpty())
+		{
+			int32 WeaponCount = 0;
+			for (int i = 0; i < DefaultWeaponClass.Num(); ++i)
+			{
+				if (DefaultWeaponClass[i])
+				{
+					FActorSpawnParameters Params;
+					Params.Owner = this;
 
-		ASBWeapon* Weapon = GetWorld()->SpawnActor<ASBWeapon>(DefaultWeaponClass, GetActorTransform(), Params);
-		CombatComponent->SetCombatEnabled(true);
-		Weapon->EquipItem();
+					ASBWeapon* Weapon = GetWorld()->SpawnActor<ASBWeapon>(DefaultWeaponClass[i], GetActorTransform(), Params);
+					CombatComponent->SetCombatEnabled(true);
+					Weapon->EquipItem((bool)WeaponCount);
+					++WeaponCount;
+				}
+
+				if (WeaponCount > 1)
+					break;
+			}
+			
+		}
 	}
 
-	// 체력바 설정
 	SetupHealthBar();
 }
 
@@ -171,78 +189,46 @@ void AMonsterCharacter::ImpactEffect(const FVector& Location)
 
 void AMonsterCharacter::HitReaction(const AActor* Attacker)
 {
-	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
+	check(CombatComponent)
+
+	if (UAnimMontage* HitReactAnimMontage = CombatComponent->GetMainWeapon()->GetHitReactMontage(Attacker))
 	{
-		float DelaySeconds = PlayAnimMontage(HitReactAnimMontage);
+		PlayAnimMontage(HitReactAnimMontage);
 	}
 }
 
-UAnimMontage* AMonsterCharacter::GetHitReactAnimation(const AActor* Attacker) const
-{
-	// LookAt 회전값을 구합니다. (현재 Actor가 공격자를 바라보는 회전값)
-	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
-	// 현재 Actor의 회전값과 LookAt 회전값의 차이를 구합니다.
-	const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(GetActorRotation(), LookAtRotation);
-	// Z축 기준의 회전값 차이만을 취합니다.
-	const float DeltaZ = DeltaRotation.Yaw;
 
-	EHitDirection HitDirection = EHitDirection::Front;
-
-	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
-	{
-		HitDirection = EHitDirection::Front;
-		UE_LOG(LogTemp, Log, TEXT("Front"));
-	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
-	{
-		HitDirection = EHitDirection::Left;
-		UE_LOG(LogTemp, Log, TEXT("Left"));
-	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f)
-		|| UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
-	{
-		HitDirection = EHitDirection::Back;
-		UE_LOG(LogTemp, Log, TEXT("Back"));
-	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
-	{
-		HitDirection = EHitDirection::Right;
-		UE_LOG(LogTemp, Log, TEXT("Right"));
-	}
-
-	UAnimMontage* SelectedMontage = nullptr;
-	switch (HitDirection)
-	{
-	case EHitDirection::Front:
-		SelectedMontage = HitReactAnimFront;
-		break;
-	case EHitDirection::Back:
-		SelectedMontage = HitReactAnimBack;
-		break;
-	case EHitDirection::Left:
-		SelectedMontage = HitReactAnimLeft;
-		break;
-	case EHitDirection::Right:
-		SelectedMontage = HitReactAnimRight;
-		break;
-	}
-
-	return SelectedMontage;
-}
-
-void AMonsterCharacter::ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType)
+void AMonsterCharacter::ActivateWeaponCollision(EWeaponType InWeaponType)
 {
 	if (CombatComponent)
 	{
-		CombatComponent->GetMainWeapon()->ActivateCollision(WeaponCollisionType);
+		switch (InWeaponType)
+		{
+		case EWeaponType::MainWeapon:
+			CombatComponent->GetMainWeapon()->ActivateCollision();
+			break;
+
+		case EWeaponType::SubWeapon:
+			CombatComponent->GetSubWeapon()->ActivateCollision();
+			break;
+		}
 	}
 }
 
-void AMonsterCharacter::DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType)
+void AMonsterCharacter::DeactivateWeaponCollision(EWeaponType InWeaponType)
 {
 	if (CombatComponent)
 	{
-		CombatComponent->GetMainWeapon()->DeactivateCollision(WeaponCollisionType);
+		switch (InWeaponType)
+		{
+		case EWeaponType::MainWeapon:
+			CombatComponent->GetMainWeapon()->DeactivateCollision();
+			break;
+
+		case EWeaponType::SubWeapon:
+			CombatComponent->GetSubWeapon()->DeactivateCollision();
+			break;
+		}
 	}
 }
 

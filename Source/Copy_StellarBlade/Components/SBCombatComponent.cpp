@@ -31,22 +31,24 @@ void USBCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 }
 
-void USBCombatComponent::SetWeapon(ASBWeapon* NewWeapon)
+void USBCombatComponent::SetWeapon(ASBWeapon* NewWeapon, bool isSubWeapon)
 {
+    ASBWeapon*& Weapon = isSubWeapon ? SubWeapon : MainWeapon;
+
     // 이미 무기를 가지고 있으면 PickupItem으로 만들어서 떨군다.
-    if (::IsValid(MainWeapon))
+    if (::IsValid(Weapon))
     {
         if (AEveCharacter* OwnerCharacter = Cast<AEveCharacter>(GetOwner()))
         {
             ASBPickupItem* PickupItem = GetWorld()->SpawnActorDeferred<ASBPickupItem>(ASBPickupItem::StaticClass(), OwnerCharacter->GetActorTransform(), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
-            PickupItem->SetEquipmentClass(MainWeapon->GetClass());
+            PickupItem->SetEquipmentClass(Weapon->GetClass());
             PickupItem->FinishSpawning(GetOwner()->GetActorTransform());
 
-            MainWeapon->Destroy();
+            Weapon->Destroy();
         }
     }
 
-    MainWeapon = NewWeapon;
+    Weapon = NewWeapon;
 }
 
 void USBCombatComponent::SetCombatEnabled(const bool bEnabled)

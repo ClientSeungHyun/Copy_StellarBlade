@@ -18,7 +18,7 @@ void UAnimNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* MeshC
 	{
 		if (ISBCombatInterface* CombatInterface = Cast<ISBCombatInterface>(OwnerActor))
 		{
-			CombatInterface->ActivateWeaponCollision(CollisionType);
+			CombatInterface->ActivateWeaponCollision(WeaponType);
 		}
 	}
 }
@@ -32,7 +32,7 @@ void UAnimNotifyState_WeaponCollision::NotifyEnd(USkeletalMeshComponent* MeshCom
 	{
 		if (ISBCombatInterface* CombatInterface = Cast<ISBCombatInterface>(OwnerActor))
 		{
-			CombatInterface->DeactivateWeaponCollision(CollisionType);
+			CombatInterface->DeactivateWeaponCollision(WeaponType);
 		}
 	}
 }

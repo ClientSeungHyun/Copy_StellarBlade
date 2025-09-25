@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SBDefine.h"
 #include "Components/ActorComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SBWeaponCollisionComponent.generated.h"
@@ -20,11 +21,14 @@ public:
 protected:
 	UPROPERTY(EditAnywhere)
 	/** 矫累 家南 */
-	FName TraceStartSocketName;
+	FName TraceStartName;
 
 	/** 场 家南 */
 	UPROPERTY(EditAnywhere)
-	FName TraceEndSocketName;
+	FName TraceEndName;
+
+	UPROPERTY(EditAnywhere)
+	EAttachmentType AttachmentType = EAttachmentType::Socket;
 
 protected:
 	/** Sphere 农扁(馆瘤抚) */
@@ -73,6 +77,10 @@ public:
 	void AddIgnoredActor(AActor* Actor);
 
 	void RemoveIgnoredActor(AActor* Actor);
+
+	void SetTraceName(FName InTraceStartName, FName InTraceEndName);
+
+	void SetAttachmentType(EAttachmentType InAttachmentType);
 
 protected:
 	bool CanHitActor(AActor* Actor) const;

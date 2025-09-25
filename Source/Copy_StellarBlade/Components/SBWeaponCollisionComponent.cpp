@@ -54,6 +54,17 @@ void USBWeaponCollisionComponent::RemoveIgnoredActor(AActor* Actor)
     IgnoredActors.Remove(Actor);
 }
 
+void USBWeaponCollisionComponent::SetTraceName(FName InTraceStartName, FName InTraceEndName)
+{
+    TraceStartName = InTraceStartName;
+    TraceEndName = InTraceEndName;
+}
+
+void USBWeaponCollisionComponent::SetAttachmentType(EAttachmentType InAttachmentType)
+{
+    AttachmentType = InAttachmentType;
+}
+
 bool USBWeaponCollisionComponent::CanHitActor(AActor* Actor) const
 {
     return AlreadyHitActors.Contains(Actor) == false;
@@ -63,13 +74,23 @@ void USBWeaponCollisionComponent::CollisionTrace()
 {
     TArray<FHitResult> OutHits;
 
-    const FVector Start = WeaponMesh->GetSocketLocation(TraceStartSocketName);
-    const FVector End = WeaponMesh->GetSocketLocation(TraceEndSocketName);
-  
-    //if (USkeletalMeshComponent* SkeletalMesh = Cast<USkeletalMeshComponent>(WeaponMesh))
-    //{
-    //    SkeletalMesh->GetBoneLocation(TEXT("asdf"));
-    //}
+    FVector Start = FVector::ZeroVector;
+    FVector End = FVector::ZeroVector;;
+
+    if (AttachmentType == EAttachmentType::Socket)
+    {
+        Start = WeaponMesh->GetSocketLocation(TraceStartName);
+        End = WeaponMesh->GetSocketLocation(TraceEndName);
+    }
+    else if (AttachmentType == EAttachmentType::Bone)
+    {
+        USkeletalMeshComponent* SkeletalMesh = Cast<USkeletalMeshComponent>(WeaponMesh);
+        Start = SkeletalMesh->GetBoneLocation(TraceStartName, EBoneSpaces::WorldSpace);
+        End = SkeletalMesh->GetBoneLocation(TraceEndName, EBoneSpaces::WorldSpace);
+    }
+
+    if (Start == FVector::ZeroVector || End == FVector::ZeroVector)
+        return;
 
     bool const bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
         GetOwner(),
