@@ -3,7 +3,7 @@
 
 #include "Equipments/TentacleWeapon.h"
 
-#include "Animations/SBAnimInstance.h"
+#include "Animation/Monster_AnimInstance.h"
 #include "Character/MonsterCharacter.h"
 #include "Components/SBCombatComponent.h"
 #include "Components/SBWeaponCollisionComponent.h"
@@ -66,10 +66,8 @@ void ATentacleWeapon::EquipItem(bool isSubWeapon)
 				WeaponCollision->AddIgnoredActor(OwnerCharacter);
 			}
 
-			CombatComponent->SetCombatEnabled(true);
-
 			// 장착한 무기의 CombatType으로 업데이트.
-			if (USBAnimInstance* Anim = Cast<USBAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
+			if (UMonster_AnimInstance* Anim = Cast<UMonster_AnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
 			{
 				Anim->UpdateCombatMode(CombatType);
 			}

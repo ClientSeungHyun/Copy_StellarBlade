@@ -17,13 +17,13 @@ EBTNodeResult::Type UBTTask_PerformAttack::ExecuteTask(UBehaviorTreeComponent& O
 
     if (ISBCombatInterface* CombatInterface = Cast<ISBCombatInterface>(ControlledPawn))
     {
+        if(!CombatInterface->IsCombatEnabled())
+            return EBTNodeResult::Failed;
+
         FOnMontageEnded MontageEndedDelegate;
         // 델리게이트 바인딩
         MontageEndedDelegate.BindLambda([this, &OwnerComp, ControlledPawn](UAnimMontage* Montage, bool bInterrupted)
             {
-                // 몽타주 종료 시 실행될 코드
-                UE_LOG(LogTemp, Log, TEXT("Execute MontageEndedDelegate"));
-
                 if (::IsValid(&OwnerComp) == false)
                 {
                     return;
@@ -44,4 +44,8 @@ EBTNodeResult::Type UBTTask_PerformAttack::ExecuteTask(UBehaviorTreeComponent& O
     }
 
     return EBTNodeResult::Failed;
+}
+
+void UBTTask_PerformAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+{
 }

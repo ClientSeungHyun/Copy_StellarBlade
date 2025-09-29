@@ -41,6 +41,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	bool bIsJumpingStart;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	float Direction;
 
 private:
 	USBStateComponent* PlayerStateComp = nullptr;

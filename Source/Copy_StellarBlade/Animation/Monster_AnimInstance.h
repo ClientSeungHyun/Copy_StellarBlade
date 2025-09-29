@@ -5,15 +5,12 @@
 #include "CoreMinimal.h"
 #include "SBDefine.h"
 #include "Animation/AnimInstance.h"
-#include "SBAnimInstance.generated.h"
+#include "Monster_AnimInstance.generated.h"
 
 class UCharacterMovementComponent;
 
-/**
- *
- */
 UCLASS()
-class COPY_STELLARBLADE_API USBAnimInstance : public UAnimInstance
+class COPY_STELLARBLADE_API UMonster_AnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 
@@ -37,6 +34,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	bool bIsFalling;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	float Direction;
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Data")
 	bool bCombatEnabled = false;
@@ -44,8 +44,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Data")
 	ECombatType CombatType = ECombatType::None;
 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Data")
+	bool bHaveTarget = false;
+
 public:
-	USBAnimInstance();
+	UMonster_AnimInstance();
 
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
@@ -61,7 +65,13 @@ public:
 public:
 	void UpdateCombatMode(const ECombatType InCombatType);
 
+public:
+	void BindAIController(AController* NewController);
+
 	// Delegate functions
 protected:
 	void OnChangedCombat(const bool bInCombatEnabled);
+	void OnChangedTarget(const bool bInHaveTarget);
+
+
 };

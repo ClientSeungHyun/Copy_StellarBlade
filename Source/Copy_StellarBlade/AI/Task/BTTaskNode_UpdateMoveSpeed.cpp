@@ -5,6 +5,7 @@
 
 #include "AIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 EBTNodeResult::Type UBTTaskNode_UpdateMoveSpeed::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -16,7 +17,10 @@ EBTNodeResult::Type UBTTaskNode_UpdateMoveSpeed::ExecuteTask(UBehaviorTreeCompon
 
 	if (UCharacterMovementComponent* MovementComp = ControlledPawn->GetComponentByClass< UCharacterMovementComponent>())
 	{
+		FVector TargetLocation = OwnerComp.GetBlackboardComponent()->GetValueAsVector(BlackboardLocation.SelectedKeyName);
+
 		MovementComp->MaxWalkSpeed = MaxWalkSpeed;
+
 		return EBTNodeResult::Succeeded;
 	}
 

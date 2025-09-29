@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 
-#define COLLISION_OBJECT_INTERACTION ECC_GameTraceChannel1
+//#define COLLISION_OBJECT_INTERACTION ECC_GameTraceChannel1
+#define COLLISION_OBJECT_TARGETING ECC_GameTraceChannel1
 
 UENUM(BlueprintType)
 enum class ESBAttributeType : uint8
@@ -48,12 +49,12 @@ enum class EWeaponCollisionType : uint8
 };
 
 UENUM(BlueprintType)
-enum class ESBAIBehavior : uint8
+enum class EMonsterAIBehavior : uint8
 {
     Idle,
     Patrol,
-    MeleeAttack,
-    Approach,
+    Attack,
+    Harass,
 };
 
 UENUM(BlueprintType)
@@ -68,4 +69,19 @@ enum class EAttachmentType : uint8
 {
     Bone,
     Socket,
+};
+
+UENUM(BlueprintType)
+enum class EMonster : uint8
+{
+    Bone,
+    Socket,
+};
+
+UENUM(BlueprintType)
+enum class ESwitchingDirection : uint8
+{
+    None,
+    Left,
+    Right,
 };

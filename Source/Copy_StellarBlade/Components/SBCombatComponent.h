@@ -8,6 +8,7 @@
 #include "SBCombatComponent.generated.h"
 
 class ASBWeapon;
+class AAIController;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDelegateOnChangedCombat, bool);
 
@@ -27,13 +28,31 @@ protected:
 	UPROPERTY()
 	ASBWeapon* SubWeapon;
 
+	AAIController* OwnerAIController = nullptr;
+
 	/* 전투 활성화 상태인지? */
 	UPROPERTY(EditAnywhere)
 	bool bCombatEnabled = false;
 
+	UPROPERTY(EditAnywhere)
+	bool bHaveTarget = false;
+
 	/** 마지막 AttackType */
 	UPROPERTY(VisibleAnywhere)
 	FGameplayTag LastAttackType;
+
+protected:
+	UPROPERTY(VisibleAnywhere)
+	bool bCanAttack = false;
+
+	UPROPERTY(EditAnywhere)
+	float MinAttackTime = 3.f;
+
+	UPROPERTY(EditAnywhere)
+	float MaxAttackTime = 5.f;
+
+	UPROPERTY(VisibleAnywhere)
+	float AttackDelayTimer = 0.f;
 
 public:
 	USBCombatComponent();
@@ -46,10 +65,14 @@ public:
 
 public:
 	void SetWeapon(ASBWeapon* NewWeapon, bool isSubWeapon = false);
+	void FinishAttack();
 
 public:
-	FORCEINLINE bool IsCombatEnabled() const { return bCombatEnabled; }
+	FORCEINLINE bool IsCombatEnabled() const { return MainWeapon && bCombatEnabled; }
 	void SetCombatEnabled(const bool bEnabled);
+
+	FORCEINLINE bool IsHaveTarget() const { return bHaveTarget; }
+	void SetHaveTarget(const bool bEnabled);
 
 	FORCEINLINE ASBWeapon* GetMainWeapon() const { return MainWeapon; };
 	FORCEINLINE ASBWeapon* GetSubWeapon() const { return SubWeapon; };
@@ -57,5 +80,7 @@ public:
 	FORCEINLINE FGameplayTag GetLastAttackType() const { return LastAttackType; };
 	FORCEINLINE void SetLastAttackType(const FGameplayTag& NewAttackTypeTag) { LastAttackType = NewAttackTypeTag; };
 
-		
+	//델리게이트
+public:
+	void OnChangedTarget(const bool bInHaveTarget);
 };

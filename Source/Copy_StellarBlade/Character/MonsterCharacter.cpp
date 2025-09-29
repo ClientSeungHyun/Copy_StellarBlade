@@ -15,6 +15,7 @@
 #include "Components/RotationComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Equipments/SBWeapon.h"
+#include "Animation/Monster_AnimInstance.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -26,7 +27,20 @@ AMonsterCharacter::AMonsterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Targeting 구체 생성및 Collision 설정.
+	TargetingSphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("TargetingSphere"));
+	TargetingSphereComponent->SetupAttachment(GetRootComponent());
+	TargetingSphereComponent->SetCollisionObjectType(COLLISION_OBJECT_TARGETING);
+	TargetingSphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	TargetingSphereComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
+	// LockOn 위젯.
+	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
+	LockOnWidgetComponent->SetupAttachment(GetRootComponent());
+	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
+	LockOnWidgetComponent->SetDrawSize(FVector2D(30.f, 30.f));
+	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	LockOnWidgetComponent->SetVisibility(false);
 
 	// HealthBar
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
@@ -47,6 +61,16 @@ AMonsterCharacter::AMonsterCharacter()
 	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
 
 	AttributeComponent->OnAttributeChanged.AddUObject(this, &ThisClass::OnAttributeChanged);
+}
+
+void AMonsterCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (UMonster_AnimInstance* AnimInst = Cast<UMonster_AnimInstance>(GetMesh()->GetAnimInstance()))
+	{
+		AnimInst->BindAIController(NewController);
+	}
 }
 
 void AMonsterCharacter::BeginPlay()
@@ -74,7 +98,7 @@ void AMonsterCharacter::BeginPlay()
 					Params.Owner = this;
 
 					ASBWeapon* Weapon = GetWorld()->SpawnActor<ASBWeapon>(DefaultWeaponClass[i], GetActorTransform(), Params);
-					CombatComponent->SetCombatEnabled(true);
+					
 					Weapon->EquipItem((bool)WeaponCount);
 					++WeaponCount;
 				}
@@ -82,7 +106,6 @@ void AMonsterCharacter::BeginPlay()
 				if (WeaponCount > 1)
 					break;
 			}
-			
 		}
 	}
 
@@ -197,6 +220,26 @@ void AMonsterCharacter::HitReaction(const AActor* Attacker)
 	}
 }
 
+void AMonsterCharacter::OnTargeted(bool bTargeted)
+{
+	if (LockOnWidgetComponent)
+	{
+		LockOnWidgetComponent->SetVisibility(bTargeted);
+	}
+}
+
+bool AMonsterCharacter::CanBeTargeted()
+{
+	if (!StateComponent)
+	{
+		return false;
+	}
+
+	FGameplayTagContainer TagCheck;
+	TagCheck.AddTag(SBGameplayTags::Character_State_Death);
+	return StateComponent->IsCurrentStateEqualToAny(TagCheck) == false;
+}
+
 
 void AMonsterCharacter::ActivateWeaponCollision(EWeaponType InWeaponType)
 {
@@ -274,10 +317,34 @@ void AMonsterCharacter::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnd
 	}
 }
 
+void AMonsterCharacter::FinishAttack()
+{
+	if(CombatComponent)
+		CombatComponent->FinishAttack();
+}
+
+bool AMonsterCharacter::IsCombatEnabled()
+{
+	if (CombatComponent)
+		return CombatComponent->IsCombatEnabled();
+
+	return false;
+}
+
 void AMonsterCharacter::ToggleHealthBarVisibility(bool bVisibility)
 {
 	if (HealthBarWidgetComponent)
 	{
 		HealthBarWidgetComponent->SetVisibility(bVisibility);
 	}
+}
+
+ASBWeapon* AMonsterCharacter::GetMainWeapon()
+{
+	return CombatComponent->GetMainWeapon();
+}
+
+void AMonsterCharacter::SetCombatEnabled(const bool bEnabled)
+{
+	CombatComponent->SetCombatEnabled(true);
 }

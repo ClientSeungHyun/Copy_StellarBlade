@@ -26,7 +26,11 @@ protected:
 	FBlackboardKeySelector BehaviorKey;
 
 	UPROPERTY(EditAnywhere)
+	FBlackboardKeySelector CanAttackKey;
+
+	UPROPERTY(EditAnywhere)
 	float AttackRangeDistance = 500.f;
+
 
 public:
 	UBTService_SelectBehavior();
@@ -36,7 +40,9 @@ protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 
 private:
-	void SetBehaviorKey(UBlackboardComponent* BlackboardComp, ESBAIBehavior Behavior) const;
+	void SetBehaviorKey(UBlackboardComponent* BlackboardComp, EMonsterAIBehavior Behavior) const;
+	void SetBehaviorKey(UBlackboardComponent* BlackboardComp, bool boolValue) const;
+
 	void UpdateBehavior(UBlackboardComponent* BlackboardComp) const;
 	
 };

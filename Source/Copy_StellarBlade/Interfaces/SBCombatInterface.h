@@ -30,4 +30,8 @@ public:
 	virtual void DeactivateWeaponCollision(EWeaponType InWeaponType) = 0;
 
 	virtual void PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate) {};
+
+	virtual void FinishAttack() {};
+
+	virtual bool IsCombatEnabled() { return false;  }
 };

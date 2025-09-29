@@ -10,6 +10,7 @@ class USBStateComponent;
 class USBEveAtrributeComponent;
 class USB_Eve_AnimInstance;
 class ASBEveWeapon;
+class UTargetingComponent;
 
 UCLASS()
 class COPY_STELLARBLADE_API AEveCharacter : public ACharacter
@@ -23,22 +24,27 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
+
 // Input Section
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* RunAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* JumpAction;
+
+	/** LockedOn */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* LockOnTargetAction;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -50,6 +56,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USBStateComponent* StateComponent;
+
+	/** LockedOn Targeting */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UTargetingComponent* TargetingComponent;
 
 protected:
 	/** 질주 속도 */
@@ -102,4 +112,9 @@ protected:
 	void Idle();
 	void NewJump();
 	void CheckLanded();
+
+	/** LockedOn */
+	void LockOnTarget();
+	//void LeftTarget();
+	//void RightTarget();
 };

@@ -12,6 +12,7 @@
 #include "SBEveTags.h"
 #include "Components/SBEveAtrributeComponent.h"
 #include "Components/SBStateComponent.h"
+#include "Components/TargetingComponent.h"
 #include "Animation/SB_Eve_AnimInstance.h"
 #include "Player/SBEveWeapon.h"
 
@@ -47,6 +48,8 @@ AEveCharacter::AEveCharacter()
 
 	AttributeComponent = CreateDefaultSubobject<USBEveAtrributeComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<USBStateComponent>(TEXT("State"));
+	// LockedOn Targeting
+	TargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("Targeting"));
 	MovementComp = GetCharacterMovement();
 
 	
@@ -121,6 +124,10 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
 		
+		// LockedOn
+		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Started, this, &ThisClass::LockOnTarget);
+		/*EnhancedInputComponent->BindAction(LeftTargetAction, ETriggerEvent::Started, this, &ThisClass::LeftTarget);
+		EnhancedInputComponent->BindAction(RightTargetAction, ETriggerEvent::Started, this, &ThisClass::RightTarget);*/
 	}
 
 }
@@ -224,4 +231,19 @@ void AEveCharacter::CheckLanded()
 	}
 
 }
+
+void AEveCharacter::LockOnTarget()
+{
+	TargetingComponent->ToggleLockOn();
+}
+
+//void AEveCharacter::LeftTarget()
+//{
+//	TargetingComponent->SwitchingLockedOnActor(ESwitchingDirection::Left);
+//}
+//
+//void AEveCharacter::RightTarget()
+//{
+//	TargetingComponent->SwitchingLockedOnActor(ESwitchingDirection::Right);
+//}
 

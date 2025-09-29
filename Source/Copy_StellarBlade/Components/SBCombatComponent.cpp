@@ -6,6 +6,10 @@
 #include "Character/EveCharacter.h"
 #include "Equipments/SBWeapon.h"
 #include "Items/SBPickupItem.h"
+#include "AI/MonsterAIController.h"
+
+#include "AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 USBCombatComponent::USBCombatComponent()
 {
@@ -18,9 +22,23 @@ void USBCombatComponent::BeginPlay()
 {
     Super::BeginPlay();
 
+    ACharacter* Character = Cast<ACharacter>(GetOwner());
+
     if (::IsValid(MainWeapon))
     {
         MainWeapon->EquipItem();
+    }
+
+    if (Character && Character->GetController())
+    {
+        OwnerAIController = Cast<AAIController>(Character->GetController());
+        if (OwnerAIController)
+        {
+            if (AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(OwnerAIController))
+            {
+                MonsterAIController->OnTargetChange.AddUObject(this, &ThisClass::OnChangedTarget);
+            }
+        }
     }
 }
 
@@ -29,6 +47,23 @@ void USBCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+    // 플레이어를 인식했을 때만 공격 대기 체크
+    if (bHaveTarget && !bCanAttack)
+    {
+        AttackDelayTimer -= DeltaTime;
+
+        if (AttackDelayTimer <= 0.f && bCombatEnabled)
+        {
+            bCanAttack = true;
+            if (OwnerAIController)
+            {
+                if (UBlackboardComponent* BlackboardComp = OwnerAIController->GetBlackboardComponent())
+                {
+                    BlackboardComp->SetValueAsBool("bCanAttack", bCanAttack);
+                }
+            }
+        }
+    }
 }
 
 void USBCombatComponent::SetWeapon(ASBWeapon* NewWeapon, bool isSubWeapon)
@@ -51,6 +86,20 @@ void USBCombatComponent::SetWeapon(ASBWeapon* NewWeapon, bool isSubWeapon)
     Weapon = NewWeapon;
 }
 
+void USBCombatComponent::FinishAttack()
+{
+    bCanAttack = false;
+    AttackDelayTimer = FMath::FRandRange(MinAttackTime, MaxAttackTime);
+
+    if (OwnerAIController)
+    {
+        if (UBlackboardComponent* BlackboardComp = OwnerAIController->GetBlackboardComponent())
+        {
+            BlackboardComp->SetValueAsBool("bCanAttack", bCanAttack);
+        }
+    }
+}
+
 void USBCombatComponent::SetCombatEnabled(const bool bEnabled)
 {
     bCombatEnabled = bEnabled;
@@ -58,5 +107,10 @@ void USBCombatComponent::SetCombatEnabled(const bool bEnabled)
     {
         OnChangedCombat.Broadcast(bCombatEnabled);
     }
+}
+
+void USBCombatComponent::OnChangedTarget(const bool bInHaveTarget)
+{
+    bHaveTarget = bInHaveTarget;
 }
 

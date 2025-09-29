@@ -32,9 +32,14 @@ void UBTService_SelectBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint
 	UpdateBehavior(OwnerComp.GetBlackboardComponent());
 }
 
-void UBTService_SelectBehavior::SetBehaviorKey(UBlackboardComponent* BlackboardComp, ESBAIBehavior Behavior) const
+void UBTService_SelectBehavior::SetBehaviorKey(UBlackboardComponent* BlackboardComp, EMonsterAIBehavior Behavior) const
 {
 	BlackboardComp->SetValueAsEnum(BehaviorKey.SelectedKeyName, static_cast<uint8>(Behavior));
+}
+
+void UBTService_SelectBehavior::SetBehaviorKey(UBlackboardComponent* BlackboardComp, bool boolValue) const
+{
+	BlackboardComp->SetValueAsBool(CanAttackKey.SelectedKeyName, boolValue);
 }
 
 void UBTService_SelectBehavior::UpdateBehavior(UBlackboardComponent* BlackboardComp) const
@@ -47,27 +52,26 @@ void UBTService_SelectBehavior::UpdateBehavior(UBlackboardComponent* BlackboardC
 	if (IsValid(TargetActor))
 	{
 		const float Distance = TargetActor->GetDistanceTo(ControlledEnemy);
+		const bool bCanAttack = BlackboardComp->GetValueAsBool(CanAttackKey.SelectedKeyName);
 
-		// 공격범위 안쪽이면
-		if (Distance <= AttackRangeDistance)
+		if (bCanAttack)
 		{
-			SetBehaviorKey(BlackboardComp, ESBAIBehavior::MeleeAttack);
+			SetBehaviorKey(BlackboardComp, EMonsterAIBehavior::Attack);
 		}
 		else
 		{
-			SetBehaviorKey(BlackboardComp, ESBAIBehavior::Approach);
+			SetBehaviorKey(BlackboardComp, EMonsterAIBehavior::Harass);
 		}
 	}
 	else
 	{
-		// Patrol point 있으면
 		if (ControlledEnemy->GetPatrolPoint() != nullptr)
 		{
-			SetBehaviorKey(BlackboardComp, ESBAIBehavior::Patrol);
+			SetBehaviorKey(BlackboardComp, EMonsterAIBehavior::Patrol);
 		}
 		else
 		{
-			SetBehaviorKey(BlackboardComp, ESBAIBehavior::Idle);
+			SetBehaviorKey(BlackboardComp, EMonsterAIBehavior::Idle);
 		}
 	}
 }

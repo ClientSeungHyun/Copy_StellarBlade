@@ -10,6 +10,7 @@ namespace SBGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_GeneralAction, "Character.State.GeneralAction");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Death, "Character.State.Death");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Hit, "Character.State.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(Character_State_Discovered, "Character.State.Discovered");
 
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Equip, "Character.Action.Equip");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Unequip, "Character.Action.Unequip");

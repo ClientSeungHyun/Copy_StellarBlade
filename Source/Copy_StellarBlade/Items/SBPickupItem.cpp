@@ -15,7 +15,7 @@ ASBPickupItem::ASBPickupItem()
 	SetRootComponent(Mesh);
 
 	// Collision ¼³Á¤.
-	Mesh->SetCollisionObjectType(COLLISION_OBJECT_INTERACTION);
+	//Mesh->SetCollisionObjectType(COLLISION_OBJECT_INTERACTION);
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 }

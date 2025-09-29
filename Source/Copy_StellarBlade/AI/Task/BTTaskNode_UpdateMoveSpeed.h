@@ -20,4 +20,7 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite);
 	float MaxWalkSpeed = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FBlackboardKeySelector BlackboardLocation;
 };

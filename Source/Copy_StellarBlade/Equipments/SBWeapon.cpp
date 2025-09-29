@@ -9,7 +9,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SBWeaponCollisionComponent.h"
 #include "Components/SBCombatComponent.h"
-#include "Animations/SBAnimInstance.h"
+#include "Animation/Monster_AnimInstance.h"
 #include "GameFramework/Character.h"
 #include "Data/SBMontageActionData.h"
 
@@ -43,7 +43,7 @@ void ASBWeapon::EquipItem(bool isSubWeapon)
 	{
 		CombatComponent->SetWeapon(this, isSubWeapon);
 
-		const FName AttachSocket = CombatComponent->IsCombatEnabled() ? EquipSocketName : UnequipSocketName;
+		const FName AttachSocket = EquipSocketName;
 
 		AttachToOwner(AttachSocket);
 
@@ -56,7 +56,7 @@ void ASBWeapon::EquipItem(bool isSubWeapon)
 		// 장착한 무기의 CombatType으로 업데이트.
 		if (ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
 		{
-			if (USBAnimInstance* Anim = Cast<USBAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
+			if (UMonster_AnimInstance* Anim = Cast<UMonster_AnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
 			{
 				//Anim->UpdateCombatMode(CombatType);
 			}

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/SBCombatInterface.h"
+#include "Interfaces/TargetingInterface.h"
 #include "MonsterCharacter.generated.h"
 
 
@@ -15,13 +16,17 @@ class USBCombatComponent;
 class ASBWeapon;
 class URotationComponent;
 class UWidgetComponent;
+class USphereComponent;
 
 UCLASS()
-class COPY_STELLARBLADE_API AMonsterCharacter : public ACharacter, public ISBCombatInterface
+class COPY_STELLARBLADE_API AMonsterCharacter : public ACharacter, public ITargetingInterface, public ISBCombatInterface
 {
 	GENERATED_BODY()
 
 protected:
+	UPROPERTY(VisibleAnywhere)
+	USphereComponent* TargetingSphereComponent;
+
 	UPROPERTY(VisibleAnywhere)
 	USBAttributeComponent* AttributeComponent;
 
@@ -33,6 +38,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	URotationComponent* RotationComponent;
+
+	/** LockOn UI Widget */
+	UPROPERTY(VisibleAnywhere)
+	UWidgetComponent* LockOnWidgetComponent;
 
 	/** HealthBar */
 	UPROPERTY(VisibleAnywhere)
@@ -63,6 +72,7 @@ public:
 	AMonsterCharacter();
 
 protected:
+	virtual void PossessedBy(AController* NewController) override;
 	virtual void BeginPlay() override;
 
 public:
@@ -77,13 +87,17 @@ protected:
 protected:
 	void ImpactEffect(const FVector& Location);
 	void HitReaction(const AActor* Attacker);
-
 public:
+	//TargetingInterface 구현
+	virtual void OnTargeted(bool bTargeted) override;
+	virtual bool CanBeTargeted() override;
+
 	//CombatInterface 구현.
 	virtual void ActivateWeaponCollision(EWeaponType InWeaponType) override;
 	virtual void DeactivateWeaponCollision(EWeaponType InWeaponType) override;
-
 	virtual void PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate) override;
+	virtual void FinishAttack() override;
+	virtual bool IsCombatEnabled() override;
 
 	// 체력바 토글
 	void ToggleHealthBarVisibility(bool bVisibility);
@@ -97,4 +111,9 @@ public:
 	{
 		PatrolIndex = (PatrolIndex + 1) % PatrolPoints.Num();
 	}
+
+	ASBWeapon* GetMainWeapon();
+	void SetCombatEnabled(const bool bEnabled);
+
 };
+

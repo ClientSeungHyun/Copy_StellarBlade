@@ -7,6 +7,7 @@
 #include "Components/SBStateComponent.h"
 #include "SBEveTags.h"
 #include "Character/EveCharacter.h"
+#include "KismetAnimationLibrary.h"
 
 USB_Eve_AnimInstance::USB_Eve_AnimInstance()
 {
@@ -88,4 +89,6 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         bIsRunning = false;
         bIsSprinting = false;
     }
+
+    Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, Player->GetActorRotation());
 }

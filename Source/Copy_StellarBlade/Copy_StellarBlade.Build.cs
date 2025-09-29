@@ -18,7 +18,8 @@ public class Copy_StellarBlade : ModuleRules
 			"InputCore", 
 			"EnhancedInput",
             "GamePlayTags",
-			"Json"
+            "AnimGraphRuntime",
+            "Json"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

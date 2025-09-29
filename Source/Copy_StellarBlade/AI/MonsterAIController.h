@@ -7,11 +7,18 @@
 #include "MonsterAIController.generated.h"
 
 class AMonsterCharacter;
+class ASBWeapon;
+class AnimInstance;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, bool);
 
 UCLASS()
 class COPY_STELLARBLADE_API AMonsterAIController : public AAIController
 {
 	GENERATED_BODY()
+
+public:
+	FOnTargetChanged OnTargetChange;
 	
 protected:
 	UPROPERTY(EditAnywhere)
@@ -26,6 +33,9 @@ protected:
 	UPROPERTY()
 	AMonsterCharacter* ControlledEnemy;
 
+	UPROPERTY(VisibleAnywhere);
+	bool bHaveTarget;
+
 public:
 	AMonsterAIController();
 
@@ -34,6 +44,11 @@ protected:
 	virtual void OnUnPossess() override;
 
 protected:
-	void UpdateTarget() const;
-	void SetTarget(AActor* NewTarget) const;
+	void UpdateTarget();
+	void SetTarget(AActor* NewTarget);
+	void HandleBattleStart();
+	void PlayBattleStartMontage(AMonsterCharacter* Monster, const ASBWeapon* Weapon, UAnimInstance* AnimInstance);
+	void OnBattleStartMontageEnded(UAnimMontage* Montage, bool bInterrupted, AMonsterCharacter* Monster);
+
+	FORCEINLINE bool IsHaveTarget() { return bHaveTarget; }
 };

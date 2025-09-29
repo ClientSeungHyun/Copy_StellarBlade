@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTDecorator.h"
-#include "BTDecorator_InRangeCheck.generated.h"
+#include "BTDecorator_MonsterAttackAllowed.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class COPY_STELLARBLADE_API UBTDecorator_InRangeCheck : public UBTDecorator
+class COPY_STELLARBLADE_API UBTDecorator_MonsterAttackAllowed : public UBTDecorator
 {
 	GENERATED_BODY()
 	
@@ -23,6 +23,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float RangeMax = 200.f;
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FBlackboardKeySelector CanAttackBlackboardKey;
 
 protected:
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
