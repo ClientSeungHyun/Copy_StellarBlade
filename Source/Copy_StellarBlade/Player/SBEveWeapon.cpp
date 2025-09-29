@@ -2,6 +2,8 @@
 
 
 #include "Player/SBEveWeapon.h"
+#include "SBEveTags.h"
+#include "Data/SBMontageActionData.h"
 
 // Sets default values
 ASBEveWeapon::ASBEveWeapon()
@@ -11,17 +13,20 @@ ASBEveWeapon::ASBEveWeapon()
 	RootComponent = SwordMesh;
 }
 
-// Called when the game starts or when spawned
 void ASBEveWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-// Called every frame
 void ASBEveWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+UAnimMontage* ASBEveWeapon::GetMontageForTag(const FGameplayTag& Tag, const int32 Index) const
+{
+	return MontageActionData->GetMontageForTag(Tag, Index);
 }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/Actor.h"
 #include "SBEveWeapon.generated.h"
 
@@ -16,6 +17,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* SwordMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | Animation")
+	class USBMontageActionData* MontageActionData;
+
 public:	
 	ASBEveWeapon();
 
@@ -25,4 +29,5 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+	UAnimMontage* GetMontageForTag(const FGameplayTag& Tag, const int32 Index = 0) const;
 };

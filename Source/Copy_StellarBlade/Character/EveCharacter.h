@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GameplayTagContainer.h"
 #include "EveCharacter.generated.h"
+
 
 class USBStateComponent;
 class USBEveAtrributeComponent;
@@ -42,6 +44,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* JumpAction;
 
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* Normal_AttackAction;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* Skill_AttackAction;
+
 	/** LockedOn */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LockOnTargetAction;
@@ -76,8 +84,27 @@ protected:
 	UPROPERTY()
 	ASBEveWeapon* Sword;
 
+protected: //Combo System
+	//콤보 작동 중인지
+	bool bComboSequenceRunning = false;
+
+	//콤보 입력 가능한지
+	bool bCanComboInput = false;
+
+	//콤보 카운터
+	int32 ComboCounter = 0;
+
+	//콤보 입력 여부
+	bool bSavedComboInput = false;
+
+	//콤보 리셋 타이머 핸들
+	FTimerHandle ComboResetTimerHandle;
+
 private:
 	bool isJumping = false;
+	bool isAttacking = false;
+
+	FGameplayTag lastAttackTag;
 
 public:
 	AEveCharacter();
@@ -94,6 +121,10 @@ public:
 
 public:
 	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; };
+
+	void EnableComboWindow();
+	void DisableComboWindow();
+	void AttackFinished(const float ComboResetDelay);
 
 	UCharacterMovementComponent* MovementComp = nullptr;
 
@@ -117,4 +148,12 @@ protected:
 	void LockOnTarget();
 	//void LeftTarget();
 	//void RightTarget();
+
+	void NormalAttack();
+	void SkillAttack();
+
+	bool CanPerformAttack();
+	void ResetCombo();
+	void DoAttack(const FGameplayTag& AttackTypeTag);
+	void ExecuteComboAttack(const FGameplayTag& AttackTypeTag);
 };
