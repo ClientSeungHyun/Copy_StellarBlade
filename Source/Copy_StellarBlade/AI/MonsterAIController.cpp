@@ -9,6 +9,8 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Character/MonsterCharacter.h"
 #include "Equipments/SBWeapon.h"
+#include "Animation/Monster_AnimInstance.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AMonsterAIController::AMonsterAIController()
 {
@@ -31,6 +33,53 @@ void AMonsterAIController::OnUnPossess()
 	ControlledEnemy = nullptr;
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 	Super::OnUnPossess();
+}
+
+void AMonsterAIController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+	if (!Blackboard) return;
+	
+	AActor* TargetActor = Cast<AActor>(Blackboard->GetValueAsObject(FName("Target")));
+	if (TargetActor)
+	{
+		FVector Direction = (TargetActor->GetActorLocation() - ControlledEnemy->GetActorLocation()).GetSafeNormal2D();
+		FRotator TargetRotation = Direction.Rotation();
+
+		// 부드럽게 회전
+		FRotator NewRotation = FMath::RInterpTo(ControlledEnemy->GetActorRotation(), TargetRotation, DeltaTime, 5.0f);
+		ControlledEnemy->SetActorRotation(NewRotation);
+	}
+
+	switch (BlackboardComp->GetValueAsEnum("Behavior"))
+	{
+	case (uint8)EMonsterAIBehavior::Attack:
+	{
+		
+	}
+		break;
+	case (uint8)EMonsterAIBehavior::Harass:
+	{
+		FVector Direction = BlackboardComp->GetValueAsVector("HarassDirection");
+
+		// Z 성분 제거 (평면 이동만)
+		Direction.Z = 0.f;
+
+		// 로컬 좌표 → 월드 좌표 변환
+		Direction = ControlledEnemy->GetActorRotation().RotateVector(Direction);
+
+		// 정규화
+		Direction.Normalize();
+
+		ControlledEnemy->AddMovementInput(Direction, 1.f);
+		ControlledEnemy->GetCharacterMovement()->bOrientRotationToMovement = false;
+	}
+		break;
+	default:
+		break;
+	}
 }
 
 void AMonsterAIController::UpdateTarget()
@@ -99,6 +148,8 @@ void AMonsterAIController::HandleBattleStart()
 
 void AMonsterAIController::PlayBattleStartMontage(AMonsterCharacter* Monster, const ASBWeapon* Weapon, UAnimInstance* AnimInstance)
 {
+	ControlledEnemy->GetCharacterMovement()->DisableMovement();
+
 	UAnimMontage* Montage = Weapon->GetMontageForTag(SBGameplayTags::Character_State_Discovered, 0);
 	if (!Montage)
 	{
@@ -124,6 +175,7 @@ void AMonsterAIController::OnBattleStartMontageEnded(UAnimMontage* Montage, bool
 {
 	if (Monster)
 	{
+		ControlledEnemy->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		Monster->SetCombatEnabled(true);
 	}
 }

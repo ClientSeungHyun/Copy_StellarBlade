@@ -21,6 +21,9 @@ EBTNodeResult::Type UBTTaskNode_UpdateMoveSpeed::ExecuteTask(UBehaviorTreeCompon
 
 		MovementComp->MaxWalkSpeed = MaxWalkSpeed;
 
+
+		UE_LOG(LogTemp, Warning, TEXT("%f"), MovementComp->MaxWalkSpeed);
+
 		return EBTNodeResult::Succeeded;
 	}
 

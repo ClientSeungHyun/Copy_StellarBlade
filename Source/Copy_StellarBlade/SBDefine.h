@@ -53,6 +53,7 @@ enum class EMonsterAIBehavior : uint8
 {
     Idle,
     Patrol,
+    Follow,
     Attack,
     Harass,
 };

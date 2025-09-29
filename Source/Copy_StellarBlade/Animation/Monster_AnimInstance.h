@@ -8,6 +8,7 @@
 #include "Monster_AnimInstance.generated.h"
 
 class UCharacterMovementComponent;
+class AMonsterAIController;
 
 UCLASS()
 class COPY_STELLARBLADE_API UMonster_AnimInstance : public UAnimInstance
@@ -20,6 +21,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "References")
 	UCharacterMovementComponent* MovementComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "References")
+	AMonsterAIController* MonsterAIController;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
@@ -35,7 +39,13 @@ protected:
 	bool bIsFalling;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
-	float Direction;
+	bool bIsHarassing;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	FVector Direction;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	//FVector HarassDirection;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Data")

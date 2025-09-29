@@ -10,6 +10,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SBCombatComponent.h"
 #include "AI/MonsterAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "AI/MonsterAIController.h"
 
 UMonster_AnimInstance::UMonster_AnimInstance()
 {
@@ -36,29 +38,31 @@ void UMonster_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
     Super::NativeUpdateAnimation(DeltaSeconds);
 
-    if (Character == nullptr)
-    {
+    if (!Character)
         return;
-    }
+    if (!MovementComponent)
+        return;
+    
+    if (MonsterAIController)
+    {
+        UBlackboardComponent* Blackboard = MonsterAIController->GetBlackboardComponent();
+        if (!Blackboard) return;
 
-    if (MovementComponent == nullptr)
-    {
-        return;
+        Direction = Blackboard->GetValueAsVector("HarassDirection");
+
+        bIsHarassing = Blackboard->GetValueAsEnum("Behavior") == (uint8)EMonsterAIBehavior::Harass;
     }
 
     Velocity = MovementComponent->Velocity;
-    //GroundSpeed = Velocity.Size2D();
 
-    GroundSpeed = FMath::FInterpTo(GroundSpeed, Velocity.Size2D(), DeltaSeconds, 8.f);
-
-    UE_LOG(LogTemp, Warning, TEXT("%f"), GroundSpeed);
+    GroundSpeed = FMath::FInterpTo(GroundSpeed, Velocity.Size2D(), DeltaSeconds, 7.f);
 
     //FVector Acc = MovementComponent->GetCurrentAcceleration();
     bShouldMove = GroundSpeed > 3.f && Velocity != FVector::ZeroVector;
 
     bIsFalling = MovementComponent->IsFalling();
 
-    Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, Character->GetActorRotation());
+    //Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, Character->GetActorRotation());
 }
 
 void UMonster_AnimInstance::AnimNotify_ResetMovementInput()
@@ -84,9 +88,10 @@ void UMonster_AnimInstance::UpdateCombatMode(const ECombatType InCombatType)
 
 void UMonster_AnimInstance::BindAIController(AController* NewController)
 {
-    if (AMonsterAIController* AIController = Cast<AMonsterAIController>(NewController))
+    MonsterAIController = Cast<AMonsterAIController>(NewController);
+    if (MonsterAIController)
     {
-        AIController->OnTargetChange.AddUObject(this, &UMonster_AnimInstance::OnChangedTarget);
+        MonsterAIController->OnTargetChange.AddUObject(this, &UMonster_AnimInstance::OnChangedTarget);
     }
 }
 
