@@ -69,6 +69,9 @@ void AEveCharacter::BeginPlay()
 	}
 }
 
+FVector PreviousRootLocation;
+FVector CurrentRootLocation;
+
 void AEveCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -84,7 +87,28 @@ void AEveCharacter::Tick(float DeltaTime)
 	//if (!Sword)
 	//{
 	//	UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
-	//}
+	
+	// Skeletal Mesh에서 Root 뼈 위치 가져오기
+	CurrentRootLocation = GetMesh()->GetSocketLocation(FName("root"));
+
+	// 이전 위치와 비교해 이동량 계산
+	FVector DeltaRoot = CurrentRootLocation - PreviousRootLocation;
+
+	// 로그 출력
+	UE_LOG(LogTemp, Warning, TEXT("Root Location: %s | Delta: %s"),
+		*CurrentRootLocation.ToString(),
+		*DeltaRoot.ToString());
+
+	// 다음 Tick을 위해 저장
+	PreviousRootLocation = CurrentRootLocation;
+
+	FVector CharacterLocation = GetActorLocation();
+	UE_LOG(LogTemp, Warning, TEXT("Actor Location: %s"), *CharacterLocation.ToString());
+
+	DrawDebugSphere(GetWorld(), CurrentRootLocation, 10.f, 12, FColor::Red, false, 0.1f);
+	DrawDebugLine(GetWorld(), PreviousRootLocation, CurrentRootLocation, FColor::Blue, false, 0.1f, 0, 2.f);
+
+	
 }
 
 void AEveCharacter::NotifyControllerChanged()
