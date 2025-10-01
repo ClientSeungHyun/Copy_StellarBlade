@@ -11,5 +11,9 @@ namespace SBEveTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_State_Idle);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_State_JumpStart);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_State_Falling);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_State_Attacking);
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_Attack_NormalAttack);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_Attack_SkillAttack);
 }
 

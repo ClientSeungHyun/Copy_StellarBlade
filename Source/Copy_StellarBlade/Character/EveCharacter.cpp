@@ -61,15 +61,6 @@ void AEveCharacter::BeginPlay()
 	
 	if (SwordClass && !Sword)
 	{
-		//FActorSpawnParameters Params;
-		//Params.SpawnCollisionHandlingOverride =
-		//	ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		//Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
-		//	SwordClass,
-		//	GetActorLocation(),
-		//	GetActorRotation(),
-		//	Params);
 		Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
 			SwordClass);
 
@@ -77,6 +68,9 @@ void AEveCharacter::BeginPlay()
 		Sword->SetOwner(this);
 	}
 }
+
+FVector PreviousRootLocation;
+FVector CurrentRootLocation;
 
 void AEveCharacter::Tick(float DeltaTime)
 {
@@ -90,10 +84,10 @@ void AEveCharacter::Tick(float DeltaTime)
 		UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
 	}*/
 
-	if (!Sword)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
-	}
+	//if (!Sword)
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
+	
 }
 
 void AEveCharacter::NotifyControllerChanged()
@@ -123,6 +117,10 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
+
+		//어색하면 Cancle사용
+		EnhancedInputComponent->BindAction(Normal_AttackAction, ETriggerEvent::Started, this, &ThisClass::NormalAttack);
+		EnhancedInputComponent->BindAction(Skill_AttackAction, ETriggerEvent::Started, this, &ThisClass::SkillAttack);
 		
 		// LockedOn
 		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Started, this, &ThisClass::LockOnTarget);
@@ -207,7 +205,7 @@ void AEveCharacter::Idle()
 
 void AEveCharacter::NewJump()
 {
-	if(isJumping == false)
+	if(isJumping == false && isAttacking == false)
 	{
 		isJumping = true;
 		StateComponent->SetState(SBEveTags::Eve_State_JumpStart);
@@ -235,6 +233,123 @@ void AEveCharacter::CheckLanded()
 void AEveCharacter::LockOnTarget()
 {
 	TargetingComponent->ToggleLockOn();
+}
+
+void AEveCharacter::NormalAttack()
+{
+	if (CanPerformAttack() == false)
+		return;
+
+	ExecuteComboAttack(SBEveTags::Eve_Attack_NormalAttack);
+}
+
+void AEveCharacter::SkillAttack()
+{
+	if (CanPerformAttack() == false)
+		return;
+
+	ExecuteComboAttack(SBEveTags::Eve_Attack_SkillAttack);
+}
+
+void AEveCharacter::EnableComboWindow()
+{
+	bCanComboInput = true;
+	UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
+}
+
+void AEveCharacter::DisableComboWindow()
+{
+	bCanComboInput = false;
+
+	if (bSavedComboInput)
+	{
+		bSavedComboInput = false;
+		ComboCounter++;
+		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
+		DoAttack(lastAttackTag);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: No input received"));
+	}
+}
+
+bool AEveCharacter::CanPerformAttack()
+{
+	check(StateComponent);
+
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(SBEveTags::Eve_State_Falling);
+	CheckTags.AddTag(SBEveTags::Eve_State_JumpStart);
+
+	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false)
+		return true;
+	else
+		return false;
+}
+
+void AEveCharacter::ResetCombo()
+{
+	bComboSequenceRunning = false;
+	bCanComboInput = false;
+	bSavedComboInput = false;
+	ComboCounter = 0;
+}
+
+void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
+{
+	check(StateComponent)
+	check(AttributeComponent)
+
+	lastAttackTag = AttackTypeTag;
+	StateComponent->ToggleMovementInput(false);
+	isAttacking = true;
+
+	UAnimMontage* Montage = Sword->GetMontageForTag(AttackTypeTag, ComboCounter);
+	if (!Montage)
+	{
+		// 콤보 한계 도달.
+		ComboCounter = 0;
+		Montage = Sword->GetMontageForTag(AttackTypeTag, ComboCounter);
+	}
+
+	PlayAnimMontage(Montage);
+}
+
+void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
+{
+	static int32 test = 0;
+	//StateComponent->GetCurrentState() != SBEveTags::Eve_State_Attacking
+	if (isAttacking == false)
+	{
+		test++;
+		StateComponent->SetState(SBEveTags::Eve_State_Attacking);
+		UE_LOG(LogTemp, Warning, TEXT(">>> ComboSequence Started <<<"));
+		ResetCombo();
+		bComboSequenceRunning = true;
+
+		DoAttack(AttackTypeTag);
+		GetWorld()->GetTimerManager().ClearTimer(ComboResetTimerHandle);
+	}
+
+	if (bCanComboInput)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+		// 콤보 윈도우가 열려 있을 때 - 최적의 타이밍
+		bSavedComboInput = true;
+	}
+}
+
+void AEveCharacter::AttackFinished(const float ComboResetDelay)
+{
+	UE_LOG(LogTemp, Warning, TEXT("AttackFinished"));
+	if (StateComponent)
+	{
+		StateComponent->ToggleMovementInput(true);
+		isAttacking = false;
+	}
+	// ComboResetDelay 후에 콤보 시퀀스 종료
+	GetWorld()->GetTimerManager().SetTimer(ComboResetTimerHandle, this, &ThisClass::ResetCombo, ComboResetDelay, false);
 }
 
 //void AEveCharacter::LeftTarget()
