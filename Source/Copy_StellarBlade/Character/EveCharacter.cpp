@@ -88,27 +88,6 @@ void AEveCharacter::Tick(float DeltaTime)
 	//{
 	//	UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
 	
-	// Skeletal Mesh에서 Root 뼈 위치 가져오기
-	CurrentRootLocation = GetMesh()->GetSocketLocation(FName("root"));
-
-	// 이전 위치와 비교해 이동량 계산
-	FVector DeltaRoot = CurrentRootLocation - PreviousRootLocation;
-
-	// 로그 출력
-	UE_LOG(LogTemp, Warning, TEXT("Root Location: %s | Delta: %s"),
-		*CurrentRootLocation.ToString(),
-		*DeltaRoot.ToString());
-
-	// 다음 Tick을 위해 저장
-	PreviousRootLocation = CurrentRootLocation;
-
-	FVector CharacterLocation = GetActorLocation();
-	UE_LOG(LogTemp, Warning, TEXT("Actor Location: %s"), *CharacterLocation.ToString());
-
-	DrawDebugSphere(GetWorld(), CurrentRootLocation, 10.f, 12, FColor::Red, false, 0.1f);
-	DrawDebugLine(GetWorld(), PreviousRootLocation, CurrentRootLocation, FColor::Blue, false, 0.1f, 0, 2.f);
-
-	
 }
 
 void AEveCharacter::NotifyControllerChanged()
@@ -275,7 +254,7 @@ void AEveCharacter::SkillAttack()
 void AEveCharacter::EnableComboWindow()
 {
 	bCanComboInput = true;
-//	UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
+	UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
 }
 
 void AEveCharacter::DisableComboWindow()
@@ -323,7 +302,6 @@ void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
 	check(AttributeComponent)
 
 	lastAttackTag = AttackTypeTag;
-	StateComponent->SetState(SBEveTags::Eve_State_Attacking);
 	StateComponent->ToggleMovementInput(false);
 	isAttacking = true;
 
@@ -340,26 +318,23 @@ void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
 
 void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 {
-	if (StateComponent->GetCurrentState() != SBEveTags::Eve_State_Attacking)
+	static int32 test = 0;
+	//StateComponent->GetCurrentState() != SBEveTags::Eve_State_Attacking
+	if (isAttacking == false)
 	{
-		if (bComboSequenceRunning && bCanComboInput == false)
-		{
-			// 애니메이션은 끝났지만 아직 콤보 시퀀스가 유효할 때 - 추가 입력 기회
-			ComboCounter++;
-			UE_LOG(LogTemp, Warning, TEXT("Additional input : Combo Counter = %d"), ComboCounter);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT(">>> ComboSequence Started <<<"));
-			ResetCombo();
-			bComboSequenceRunning = true;
-		}
+		test++;
+		StateComponent->SetState(SBEveTags::Eve_State_Attacking);
+		UE_LOG(LogTemp, Warning, TEXT(">>> ComboSequence Started <<<"));
+		ResetCombo();
+		bComboSequenceRunning = true;
 
 		DoAttack(AttackTypeTag);
 		GetWorld()->GetTimerManager().ClearTimer(ComboResetTimerHandle);
 	}
-	else if (bCanComboInput)
+
+	if (bCanComboInput)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
 		// 콤보 윈도우가 열려 있을 때 - 최적의 타이밍
 		bSavedComboInput = true;
 	}
@@ -367,7 +342,7 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 
 void AEveCharacter::AttackFinished(const float ComboResetDelay)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("AttackFinished"));
+	UE_LOG(LogTemp, Warning, TEXT("AttackFinished"));
 	if (StateComponent)
 	{
 		StateComponent->ToggleMovementInput(true);
