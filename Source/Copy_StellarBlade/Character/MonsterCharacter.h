@@ -113,6 +113,8 @@ public:
 	}
 
 	ASBWeapon* GetMainWeapon();
+	USBCombatComponent* GetCombatComponent();
+
 	void SetCombatEnabled(const bool bEnabled);
 
 };

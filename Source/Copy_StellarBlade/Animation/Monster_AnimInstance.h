@@ -78,6 +78,10 @@ public:
 public:
 	void BindAIController(AController* NewController);
 
+public:
+	FORCEINLINE bool IsHarassing() { return bIsHarassing; }
+	FORCEINLINE void SetIsHarassing(bool InIsHarassing) { bIsHarassing = InIsHarassing; }
+
 	// Delegate functions
 protected:
 	void OnChangedCombat(const bool bInCombatEnabled);

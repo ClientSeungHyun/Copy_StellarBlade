@@ -33,8 +33,11 @@ protected:
 	UPROPERTY()
 	AMonsterCharacter* ControlledEnemy;
 
-	UPROPERTY(VisibleAnywhere);
+	UPROPERTY(VisibleAnywhere)
 	bool bHaveTarget;
+
+	UPROPERTY(EditAnywhere)
+	float FollowMaxRange;
 
 public:
 	AMonsterAIController();

@@ -6,12 +6,60 @@
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Animation/Monster_AnimInstance.h"
+#include "Character/MonsterCharacter.h"
 
 EBTNodeResult::Type UBTTaskNode_HarassMove::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-    FVector MoveDirection = CalculateHarassDirection(OwnerComp);
-    OwnerComp.GetBlackboardComponent()->SetValueAsVector("HarassDirection", MoveDirection);
+    AAIController* AIController = OwnerComp.GetAIOwner();
+    if (!AIController) return EBTNodeResult::Failed;
 
+    const AActor* TargetActor = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject("Target"));
+    if (!TargetActor) return EBTNodeResult::Failed;;
+
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    FVector CurrentPlayerLocation = TargetActor->GetActorLocation();
+
+    const float UpdateInterval = FMath::FRandRange(4.f, 7.f);
+    bool bTimePassed = (CurrentTime - LastDirectionUpdateTime) >= UpdateInterval;
+
+    const float MinDistanceChange = 400.0f;
+    bool bPlayerMoved = FVector::Dist(CurrentPlayerLocation, LastPlayerLocation) > MinDistanceChange;
+
+    if (bTimePassed || bPlayerMoved)
+    {
+        CurrentHarassDirection = CalculateHarassDirection(OwnerComp);
+
+        LastDirectionUpdateTime = CurrentTime;
+        LastPlayerLocation = CurrentPlayerLocation;
+    }
+
+    // 이동 방향 적용
+    OwnerComp.GetBlackboardComponent()->SetValueAsVector("HarassDirection", CurrentHarassDirection);
+
+    if (AIController && AIController->GetPawn())
+    {
+        UMonster_AnimInstance* AnimInstance = Cast< UMonster_AnimInstance>(OwnerComp.GetAIOwner()->GetCharacter()->GetMesh()->GetAnimInstance());
+        if (AnimInstance)
+        {
+            AnimInstance->SetIsHarassing(true);
+        }
+    }
+
+    return EBTNodeResult::Succeeded;
+}
+
+
+EBTNodeResult::Type UBTTaskNode_HarassMove::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+    AAIController* AIController = OwnerComp.GetAIOwner();
+    if (AIController && AIController->GetPawn())
+    {
+        UMonster_AnimInstance* AnimInstance = Cast< UMonster_AnimInstance>(OwnerComp.GetAIOwner()->GetCharacter()->GetMesh()->GetAnimInstance());
+        if (AnimInstance)
+        {
+            AnimInstance->SetIsHarassing(false);
+        }
+    }
 
     return EBTNodeResult::Succeeded;
 }
@@ -28,7 +76,6 @@ FVector UBTTaskNode_HarassMove::CalculateHarassDirection(UBehaviorTreeComponent&
     if (!TargetActor) return FVector::ZeroVector;
 
     FVector ToTarget = TargetActor->GetActorLocation() - Pawn->GetActorLocation();
-    float DistanceToTarget = ToTarget.Size();
     ToTarget.Z = 0;
     ToTarget.Normalize();
 
@@ -37,26 +84,8 @@ FVector UBTTaskNode_HarassMove::CalculateHarassDirection(UBehaviorTreeComponent&
     float SideSign = FMath::RandBool() ? 1.f : -1.f;
     float SideOffset = FMath::RandRange(0.5f, 1.0f);
 
-    // 앞뒤 이동 결정
-    float ForwardOffset = 0.0f;
-    if (DistanceToTarget > DesiredDistance)
-    {
-        // 플레이어가 멀면 앞으로 이동
-        ForwardOffset = FMath::RandRange(0.3f, 0.7f);
-    }
-    else if (DistanceToTarget < MinDistance)
-    {
-        // 너무 가까우면 뒤로 이동
-        ForwardOffset = FMath::RandRange(-0.7f, -0.3f);
-    }
-    else
-    {
-        // 적정 거리일 때는 앞뒤 이동 없음
-        ForwardOffset = 0.0f;
-    }
-
-    // 최종 방향 계산
-    FVector HarassDir = (ToTarget * ForwardOffset) + (RightVector * SideSign * SideOffset);
+    // 최종 방향 계산 (앞뒤 이동 제거)
+    FVector HarassDir = RightVector * SideSign * SideOffset;
     HarassDir.Normalize();
 
     return HarassDir;

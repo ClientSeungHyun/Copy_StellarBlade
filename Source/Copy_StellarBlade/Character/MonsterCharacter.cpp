@@ -344,6 +344,11 @@ ASBWeapon* AMonsterCharacter::GetMainWeapon()
 	return CombatComponent->GetMainWeapon();
 }
 
+USBCombatComponent* AMonsterCharacter::GetCombatComponent()
+{
+	return CombatComponent;
+}
+
 void AMonsterCharacter::SetCombatEnabled(const bool bEnabled)
 {
 	CombatComponent->SetCombatEnabled(true);

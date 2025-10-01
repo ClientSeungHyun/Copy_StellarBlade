@@ -49,8 +49,6 @@ void UMonster_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         if (!Blackboard) return;
 
         Direction = Blackboard->GetValueAsVector("HarassDirection");
-
-        bIsHarassing = Blackboard->GetValueAsEnum("Behavior") == (uint8)EMonsterAIBehavior::Harass;
     }
 
     Velocity = MovementComponent->Velocity;

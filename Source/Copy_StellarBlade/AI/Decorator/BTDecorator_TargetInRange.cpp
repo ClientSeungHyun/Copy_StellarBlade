@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AI/Decorator/BTDecorator_MonsterAttackAllowed.h"
+#include "AI/Decorator/BTDecorator_TargetInRange.h"
 
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
-bool UBTDecorator_MonsterAttackAllowed::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
+bool UBTDecorator_TargetInRange::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
 {
 	const APawn* ControlledPawn = OwnerComp.GetAIOwner()->GetPawn();
 	if (!ControlledPawn)
@@ -21,9 +21,7 @@ bool UBTDecorator_MonsterAttackAllowed::CalculateRawConditionValue(UBehaviorTree
 		return false;
 	}
 
-	// 설정한 거리 내 및 공격 가능 변수가 true라면
 	const float Distance = ControlledPawn->GetDistanceTo(TargetActor);
-	const bool bCanAttack = OwnerComp.GetBlackboardComponent()->GetValueAsBool(CanAttackBlackboardKey.SelectedKeyName);
 
-	return (Distance <= RangeMax) && bCanAttack;
+	return Distance <= RangeMax;
 }

@@ -55,7 +55,6 @@ enum class EMonsterAIBehavior : uint8
     Patrol,
     Follow,
     Attack,
-    Harass,
 };
 
 UENUM(BlueprintType)

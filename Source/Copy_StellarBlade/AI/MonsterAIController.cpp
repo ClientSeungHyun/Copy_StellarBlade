@@ -53,32 +53,16 @@ void AMonsterAIController::Tick(float DeltaTime)
 		ControlledEnemy->SetActorRotation(NewRotation);
 	}
 
-	switch (BlackboardComp->GetValueAsEnum("Behavior"))
-	{
-	case (uint8)EMonsterAIBehavior::Attack:
-	{
-		
-	}
-		break;
-	case (uint8)EMonsterAIBehavior::Harass:
+	if (BlackboardComp->GetValueAsEnum("Behavior") == (uint8)EMonsterAIBehavior::Attack
+		&& Cast<UMonster_AnimInstance>(ControlledEnemy->GetMesh()->GetAnimInstance())->IsHarassing())
 	{
 		FVector Direction = BlackboardComp->GetValueAsVector("HarassDirection");
-
-		// Z 성분 제거 (평면 이동만)
 		Direction.Z = 0.f;
-
-		// 로컬 좌표 → 월드 좌표 변환
 		Direction = ControlledEnemy->GetActorRotation().RotateVector(Direction);
-
-		// 정규화
 		Direction.Normalize();
 
 		ControlledEnemy->AddMovementInput(Direction, 1.f);
 		ControlledEnemy->GetCharacterMovement()->bOrientRotationToMovement = false;
-	}
-		break;
-	default:
-		break;
 	}
 }
 

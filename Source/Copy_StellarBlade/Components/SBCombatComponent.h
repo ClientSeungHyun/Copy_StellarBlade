@@ -42,17 +42,20 @@ protected:
 	FGameplayTag LastAttackType;
 
 protected:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
 	bool bCanAttack = false;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Attack")
 	float MinAttackTime = 3.f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Attack")
 	float MaxAttackTime = 5.f;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
 	float AttackDelayTimer = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	float FollowStartRange = 400.f;
 
 public:
 	USBCombatComponent();
@@ -79,6 +82,8 @@ public:
 
 	FORCEINLINE FGameplayTag GetLastAttackType() const { return LastAttackType; };
 	FORCEINLINE void SetLastAttackType(const FGameplayTag& NewAttackTypeTag) { LastAttackType = NewAttackTypeTag; };
+
+	FORCEINLINE float GetFollowStartRange() { return FollowStartRange; };
 
 	//µ®∏Æ∞‘¿Ã∆Æ
 public:

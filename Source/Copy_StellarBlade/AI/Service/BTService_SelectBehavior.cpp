@@ -6,6 +6,8 @@
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Character/MonsterCharacter.h"
+#include "Components/SBCombatComponent.h"
+#include "Animation/Monster_AnimInstance.h"
 
 UBTService_SelectBehavior::UBTService_SelectBehavior()
 {
@@ -29,7 +31,7 @@ void UBTService_SelectBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint
 {
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
-	UpdateBehavior(OwnerComp.GetBlackboardComponent());
+	UpdateBehavior(OwnerComp);
 }
 
 void UBTService_SelectBehavior::SetBehaviorKey(UBlackboardComponent* BlackboardComp, EMonsterAIBehavior Behavior) const
@@ -42,26 +44,25 @@ void UBTService_SelectBehavior::SetBehaviorKey(UBlackboardComponent* BlackboardC
 	BlackboardComp->SetValueAsBool(CanAttackKey.SelectedKeyName, boolValue);
 }
 
-void UBTService_SelectBehavior::UpdateBehavior(UBlackboardComponent* BlackboardComp) const
+void UBTService_SelectBehavior::UpdateBehavior(UBehaviorTreeComponent& OwnerComp) const
 {
-	check(BlackboardComp)
-	check(ControlledEnemy)
+	UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
 
-	AActor* TargetActor = Cast<AActor>(BlackboardComp->GetValueAsObject(TargetKey.SelectedKeyName));
+	check(BlackboardComp)
+		check(ControlledEnemy)
+
+		AActor* TargetActor = Cast<AActor>(BlackboardComp->GetValueAsObject(TargetKey.SelectedKeyName));
+
+	// 매 프레임 경계 여부를 false로 설정
+	UMonster_AnimInstance* AnimInstance = Cast< UMonster_AnimInstance>(OwnerComp.GetAIOwner()->GetCharacter()->GetMesh()->GetAnimInstance());
+	if (AnimInstance)
+	{
+		AnimInstance->SetIsHarassing(false);
+	}
 
 	if (IsValid(TargetActor))
 	{
-		const float Distance = TargetActor->GetDistanceTo(ControlledEnemy);
-		const bool bCanAttack = BlackboardComp->GetValueAsBool(CanAttackKey.SelectedKeyName);
-
-		if (bCanAttack)
-		{
-			SetBehaviorKey(BlackboardComp, EMonsterAIBehavior::Attack);
-		}
-		else
-		{
-			SetBehaviorKey(BlackboardComp, EMonsterAIBehavior::Harass);
-		}
+		SetBehaviorKey(BlackboardComp, EMonsterAIBehavior::Attack);
 	}
 	else
 	{

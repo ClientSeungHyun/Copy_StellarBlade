@@ -43,6 +43,6 @@ private:
 	void SetBehaviorKey(UBlackboardComponent* BlackboardComp, EMonsterAIBehavior Behavior) const;
 	void SetBehaviorKey(UBlackboardComponent* BlackboardComp, bool boolValue) const;
 
-	void UpdateBehavior(UBlackboardComponent* BlackboardComp) const;
+	void UpdateBehavior(UBehaviorTreeComponent& OwnerComp) const;
 	
 };
