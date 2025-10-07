@@ -266,7 +266,7 @@ void AEveCharacter::DisableComboWindow()
 		bSavedComboInput = false;
 		ComboCounter++;
 		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
-		DoAttack(lastAttackTag);
+		DoAttack(Sword->GetLastAttackTag());
 	}
 	else
 	{
@@ -301,7 +301,7 @@ void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
 	check(StateComponent)
 	check(AttributeComponent)
 
-	lastAttackTag = AttackTypeTag;
+	Sword->SetLastAttackTag(AttackTypeTag);
 	StateComponent->ToggleMovementInput(false);
 	isAttacking = true;
 

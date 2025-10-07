@@ -126,6 +126,8 @@ public:
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
 
+	ASBEveWeapon* GetWeapon() { return Sword; }
+
 	UCharacterMovementComponent* MovementComp = nullptr;
 
 protected:

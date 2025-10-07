@@ -4,6 +4,8 @@
 #include "Player/SBEveWeapon.h"
 #include "SBEveTags.h"
 #include "Data/SBMontageActionData.h"
+#include "Components/SBWeaponCollisionComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASBEveWeapon::ASBEveWeapon()
@@ -11,6 +13,15 @@ ASBEveWeapon::ASBEveWeapon()
 	PrimaryActorTick.bCanEverTick = true;
 	SwordMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SwordMesh"));
 	RootComponent = SwordMesh;
+
+	WeaponCollision = CreateDefaultSubobject<USBWeaponCollisionComponent>("WeaponCollision");
+	WeaponCollision->OnHitActor.AddUObject(this, &ThisClass::OnHitActor);
+
+	WeaponCollision->SetWeaponMesh(SwordMesh);
+	WeaponCollision->AddIgnoredActor(GetOwner()); // 무기를 소유한 Actor은 충돌 무시
+
+	DamageMultiplierMap.Add(SBEveTags::Eve_Attack_NormalAttack, 1.8f);
+	DamageMultiplierMap.Add(SBEveTags::Eve_Attack_SkillAttack, 2.1);
 }
 
 void ASBEveWeapon::BeginPlay()
@@ -25,8 +36,56 @@ void ASBEveWeapon::Tick(float DeltaTime)
 
 }
 
+void ASBEveWeapon::SetLastAttackTag(FGameplayTag tag)
+{
+	lastAttackTag = tag;
+}
+
 UAnimMontage* ASBEveWeapon::GetMontageForTag(const FGameplayTag& Tag, const int32 Index) const
 {
 	return MontageActionData->GetMontageForTag(Tag, Index);
+}
+
+float ASBEveWeapon::GetAttackDamage() const
+{
+	if (const AActor* OwnerActor = GetOwner())
+	{
+		if (DamageMultiplierMap.Contains(lastAttackTag))
+		{
+			const float Multiplier = DamageMultiplierMap[lastAttackTag];
+			return BaseDamage * Multiplier;
+		}
+	}
+
+	return BaseDamage;
+}
+void ASBEveWeapon::ActivateCollision()
+{
+	WeaponCollision->TurnOnCollision();
+}
+
+void ASBEveWeapon::DeactivateCollision()
+{
+	WeaponCollision->TurnOffCollision();
+}
+
+void ASBEveWeapon::OnHitActor(const FHitResult& Hit)
+{
+	AActor* TargetActor = Hit.GetActor();
+
+	// 데미지 방향
+	FVector DamageDirection = GetOwner()->GetActorForwardVector();
+
+	// 데미지
+	float AttackDamage = GetAttackDamage();
+
+	UGameplayStatics::ApplyPointDamage(
+		TargetActor,
+		AttackDamage,
+		DamageDirection,
+		Hit,
+		GetOwner()->GetInstigatorController(),
+		this,
+		nullptr);
 }
 
