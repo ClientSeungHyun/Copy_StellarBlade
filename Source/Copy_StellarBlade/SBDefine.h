@@ -17,7 +17,8 @@ enum class ESBAttributeType : uint8
 UENUM(BlueprintType)
 enum class EHitDirection : uint8
 {
-    Front,
+    Front_L,
+    Front_R,
     Back,
     Left,
     Right,

@@ -23,14 +23,9 @@ ASBWeapon::ASBWeapon()
 		WeaponCollisions.Add(WeaponCollision);
 	}
 
-	StaminaCostMap.Add(SBGameplayTags::Character_Attack_Light, 7.f);
-	StaminaCostMap.Add(SBGameplayTags::Character_Attack_Running, 12.f);
-	StaminaCostMap.Add(SBGameplayTags::Character_Attack_Special, 15.f);
-	StaminaCostMap.Add(SBGameplayTags::Character_Attack_Heavy, 20.f);
-
-	DamageMultiplierMap.Add(SBGameplayTags::Character_Attack_Heavy, 1.8f);
-	DamageMultiplierMap.Add(SBGameplayTags::Character_Attack_Running, 1.8f);
-	DamageMultiplierMap.Add(SBGameplayTags::Character_Attack_Special, 2.1f);
+	DamageMultiplierMap.Add(SBGameplayTags::Monster_Attack_General, 1.8f);
+	DamageMultiplierMap.Add(SBGameplayTags::Monster_Attack_Blink, 1.8f);
+	DamageMultiplierMap.Add(SBGameplayTags::Monster_Attack_Repulse, 2.1f);
 }
 
 void ASBWeapon::EquipItem(bool isSubWeapon)
@@ -76,19 +71,24 @@ UAnimMontage* ASBWeapon::GetRandomMontageForTag(const FGameplayTag& Tag) const
 //
 UAnimMontage* ASBWeapon::GetHitReactMontage(const AActor* Attacker) const
 {
-	// LookAt 회전값을 구합니다. (현재 Actor가 공격자를 바라보는 회전값)
+	// 현재 Actor가 공격자를 바라보는 회전값
 	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetOwner()->GetActorLocation(), Attacker->GetActorLocation());
 	// 현재 Actor의 회전값과 LookAt 회전값의 차이를 구합니다.
 	const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(GetOwner()->GetActorRotation(), LookAtRotation);
 	// Z축 기준의 회전값 차이만을 취합니다.
 	const float DeltaZ = DeltaRotation.Yaw;
 
-	EHitDirection HitDirection = EHitDirection::Front;
+	EHitDirection HitDirection = EHitDirection::Front_L;
 
-	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
+	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 0.f))
 	{
-		HitDirection = EHitDirection::Front;
-		UE_LOG(LogTemp, Log, TEXT("Front"));
+		HitDirection = EHitDirection::Front_L;
+		UE_LOG(LogTemp, Log, TEXT("Front_L"));
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 0.f, 45.f))
+	{
+		HitDirection = EHitDirection::Front_R;
+		UE_LOG(LogTemp, Log, TEXT("Front_R"));
 	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f)
 		|| UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
@@ -111,17 +111,20 @@ UAnimMontage* ASBWeapon::GetHitReactMontage(const AActor* Attacker) const
 	UAnimMontage* SelectedMontage = nullptr;
 	switch (HitDirection)
 	{
-	case EHitDirection::Front:
+	case EHitDirection::Front_L:
 		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 0);
 		break;
-	case EHitDirection::Back:
+	case EHitDirection::Front_R:
 		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 1);
 		break;
-	case EHitDirection::Left:
+	case EHitDirection::Back:
 		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 2);
 		break;
-	case EHitDirection::Right:
+	case EHitDirection::Left:
 		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 3);
+		break;
+	case EHitDirection::Right:
+		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 4);
 		break;
 	}
 
@@ -189,4 +192,27 @@ void ASBWeapon::DeactivateCollision()
 
 	for (const auto& Col : WeaponCollisions)
 		Col->TurnOffCollision();
+}
+
+void ASBWeapon::ActivateWeapon()
+{
+	// 무기 본 인덱스 찾기
+	int32 BoneIndex = Mesh->GetBoneIndex(FName("Bip001-R-Sword"));
+	if (BoneIndex != INDEX_NONE)
+	{
+		FTransform BoneTransform = Mesh->GetBoneTransform(BoneIndex);
+
+		// 길이 늘리기 (Scale 조정)
+		FVector NewScale = BoneTransform.GetScale3D();
+		NewScale.Z = 0.5f; // 활성화 시 2배
+		BoneTransform.SetScale3D(NewScale);
+
+		//// 본 트랜스폼 적용
+		//Mesh->BoneSpaceTransforms[BoneIndex] = BoneTransform.ToMatrixWithScale();
+		//Mesh->MarkRefreshTransformDirty(); // 갱신 필요
+	}
+}
+
+void ASBWeapon::DeactiveWeapon()
+{
 }

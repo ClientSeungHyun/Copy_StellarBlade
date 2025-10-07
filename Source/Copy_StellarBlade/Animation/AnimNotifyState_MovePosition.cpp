@@ -16,16 +16,9 @@ void UAnimNotifyState_MovePosition::NotifyBegin(USkeletalMeshComponent* MeshComp
 
     if (ACharacter* Character = Cast<ACharacter>(MeshComp->GetOwner()))
     {
-        if (TotalDuration > 0.f)
-        {
-            MoveSpeed = MoveDistance / TotalDuration;
-        }
-        else
-        {
-            MoveSpeed = 0.f;
-        }
-
-        Character->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+        StartLocation = Character->GetActorLocation();
+        ElapsedTime = 0.f;
+        MoveDuration = TotalDuration;
     }
 }
 
@@ -37,11 +30,15 @@ void UAnimNotifyState_MovePosition::NotifyTick(USkeletalMeshComponent* MeshComp,
 
     if (ACharacter* Character = Cast<ACharacter>(MeshComp->GetOwner()))
     {
-        MoveDirection = Character->GetActorForwardVector();
-        MoveDirection.Z = 0.f;
-        MoveDirection.Normalize();
+        ElapsedTime += FrameDeltaTime;
+        float Alpha = FMath::Clamp(ElapsedTime / MoveDuration, 0.f, 1.f);
 
-        Character->AddMovementInput(MoveDirection, MoveSpeed * FrameDeltaTime);
+        FVector Direction = Character->GetActorForwardVector();
+        Direction.Z = 0.f;
+        Direction.Normalize();
+
+        FVector TargetLocation = StartLocation + Direction * MoveDistance * Alpha;
+        Character->SetActorLocation(TargetLocation, true); // 충돌 고려
     }
 }
 

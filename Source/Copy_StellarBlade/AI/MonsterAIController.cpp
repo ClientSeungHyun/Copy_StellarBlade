@@ -7,7 +7,7 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionComponent.h"
-#include "Character/MonsterCharacter.h"
+#include "Character/Monster/MonsterCharacter.h"
 #include "Equipments/SBWeapon.h"
 #include "Animation/Monster_AnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -134,7 +134,7 @@ void AMonsterAIController::PlayBattleStartMontage(AMonsterCharacter* Monster, co
 {
 	ControlledEnemy->GetCharacterMovement()->DisableMovement();
 
-	UAnimMontage* Montage = Weapon->GetMontageForTag(SBGameplayTags::Character_State_Discovered, 0);
+	UAnimMontage* Montage = Weapon->GetMontageForTag(SBGameplayTags::Monster_State_Discovered, 0);
 	if (!Montage)
 	{
 		Monster->SetCombatEnabled(true);

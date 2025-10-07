@@ -5,7 +5,7 @@
 
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Character/MonsterCharacter.h"
+#include "Character/Monster/MonsterCharacter.h"
 #include "Engine/TargetPoint.h"
 
 EBTNodeResult::Type UBTTask_FindPatrolPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)

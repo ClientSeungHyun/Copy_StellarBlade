@@ -11,14 +11,17 @@ namespace SBGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_GeneralAction);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Death);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Hit);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Discovered);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Equip);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Unequip);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_HitReaction);
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Attack_Light);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Attack_Running);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Attack_Special);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Attack_Heavy);
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Monster_State_Discovered);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Monster_State_Hit);
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Monster_Attack_General);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Monster_Attack_Blink);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Monster_Attack_Repulse);
+	//UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Attack_Heavy);
 }

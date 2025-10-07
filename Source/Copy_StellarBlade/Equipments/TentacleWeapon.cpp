@@ -4,7 +4,7 @@
 #include "Equipments/TentacleWeapon.h"
 
 #include "Animation/Monster_AnimInstance.h"
-#include "Character/MonsterCharacter.h"
+#include "Character/Monster/MonsterCharacter.h"
 #include "Components/SBCombatComponent.h"
 #include "Components/SBWeaponCollisionComponent.h"
 

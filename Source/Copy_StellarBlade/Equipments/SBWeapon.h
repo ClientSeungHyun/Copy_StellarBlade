@@ -81,6 +81,10 @@ public:
 	virtual void DeactivateCollision();
 
 public:
+	void ActivateWeapon();
+	void DeactiveWeapon();
+
+public:
 	/** 무기의 Collision에 검출된 Actor에 Damage를 전달 */
 	void OnHitActor(const FHitResult& Hit);
 };

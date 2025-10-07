@@ -5,7 +5,7 @@
 
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Character/MonsterCharacter.h"
+#include "Character/Monster/MonsterCharacter.h"
 #include "Components/SBCombatComponent.h"
 #include "Animation/Monster_AnimInstance.h"
 

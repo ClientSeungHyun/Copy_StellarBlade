@@ -6,7 +6,7 @@
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Animation/Monster_AnimInstance.h"
-#include "Character/MonsterCharacter.h"
+#include "Character/Monster/MonsterCharacter.h"
 
 EBTNodeResult::Type UBTTaskNode_HarassMove::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -80,12 +80,12 @@ FVector UBTTaskNode_HarassMove::CalculateHarassDirection(UBehaviorTreeComponent&
     ToTarget.Normalize();
 
     // 좌우 방향 계산
-    FVector RightVector = FVector::CrossProduct(FVector::UpVector, ToTarget).GetSafeNormal();
+    FVector RightVector = Pawn->GetActorRightVector(); /*FVector::CrossProduct(FVector::UpVector, ToTarget).GetSafeNormal()*/;
     float SideSign = FMath::RandBool() ? 1.f : -1.f;
     float SideOffset = FMath::RandRange(0.5f, 1.0f);
 
     // 최종 방향 계산 (앞뒤 이동 제거)
-    FVector HarassDir = RightVector * SideSign * SideOffset;
+    FVector HarassDir = RightVector * SideSign;
     HarassDir.Normalize();
 
     return HarassDir;
