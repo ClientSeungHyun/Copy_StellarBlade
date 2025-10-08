@@ -81,6 +81,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float NormalSpeed = 400.f;
 
+	/** °È´Â ¼Óµµ */
+	UPROPERTY(EditAnywhere, Category = "Sprinting")
+	float SlowSpeed = 200.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASBEveWeapon> SwordClass;
 
@@ -119,6 +123,7 @@ protected: //Combo System
 private:
 	bool isJumping = false;
 	bool isAttacking = false;
+	bool isGuarding = false;
 
 	FGameplayTag lastAttackTag;
 
@@ -146,6 +151,8 @@ public:
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
 
+
+	bool GetIsGuarding() { return isGuarding; }
 	ASBEveWeapon* GetWeapon() { return Sword; }
 
 	UCharacterMovementComponent* MovementComp = nullptr;
@@ -164,6 +171,8 @@ protected:
 
 	void Idle();
 	void NewJump();
+	void IsGuard();
+	void IsNotGuard();
 	void CheckLanded();
 
 	/** LockedOn */
@@ -178,7 +187,6 @@ protected:
 	void ResetCombo();
 	void DoAttack(const FGameplayTag& AttackTypeTag);
 	void ExecuteComboAttack(const FGameplayTag& AttackTypeTag);
-
 
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;

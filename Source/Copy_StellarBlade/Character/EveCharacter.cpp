@@ -33,7 +33,7 @@ AEveCharacter::AEveCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 
 	/** 이동, 감속 속도 */
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->JumpZVelocity = 500;
 
@@ -114,6 +114,9 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::NewJump);
+
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::IsGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::IsNotGuard);
 
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
@@ -196,6 +199,11 @@ void AEveCharacter::Move(const FInputActionValue& Values)
 		StateComponent->SetState(SBEveTags::Eve_State_Walking);
 	}
 
+	if (isGuarding)
+		GetCharacterMovement()->MaxWalkSpeed = SlowSpeed;
+	else
+		GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+
 	if (Controller != nullptr)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -258,6 +266,16 @@ void AEveCharacter::NewJump()
 		StateComponent->SetState(SBEveTags::Eve_State_JumpStart);
 		Jump();
 	}
+}
+
+void AEveCharacter::IsGuard()
+{
+	isGuarding = true;
+}
+
+void AEveCharacter::IsNotGuard()
+{
+	isGuarding = false;
 }
 
 void AEveCharacter::CheckLanded()
@@ -328,6 +346,7 @@ bool AEveCharacter::CanPerformAttack()
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(SBEveTags::Eve_State_Falling);
 	CheckTags.AddTag(SBEveTags::Eve_State_JumpStart);
+	CheckTags.AddTag(SBEveTags::Eve_State_Guard);
 
 	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false)
 		return true;
