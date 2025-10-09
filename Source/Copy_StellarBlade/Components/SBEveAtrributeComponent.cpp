@@ -4,7 +4,7 @@
 #include "Components/SBEveAtrributeComponent.h"
 #include "SBStateComponent.h"
 #include "SBEveTags.h"
-
+#include "Character/EveCharacter.h"
 
 USBEveAtrributeComponent::USBEveAtrributeComponent()
 {
@@ -17,7 +17,7 @@ void USBEveAtrributeComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
+	OwnerCharacter = Cast<AEveCharacter>(GetOwner());
 }
 
 
@@ -47,6 +47,11 @@ void USBEveAtrributeComponent::BroadcastAttributeChanged(ESBAttributeType InAttr
 void USBEveAtrributeComponent::TakeDamageAmount(float DamageAmount)
 {
 	// 체력 차감.
+	if (OwnerCharacter != nullptr && OwnerCharacter->GetIsGuarding())
+	{
+		DamageAmount = DamageAmount * 0.7f;
+	}
+
 	BaseHealth = FMath::Clamp(BaseHealth - DamageAmount, 0.f, MaxHealth);
 
 	BroadcastAttributeChanged(ESBAttributeType::Health);

@@ -8,7 +8,10 @@
 #include "Components/ActorComponent.h"
 #include "SBEveAtrributeComponent.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDelegateOnAttributeChanged, ESBAttributeType, float);
 DECLARE_MULTICAST_DELEGATE(FOnDeath);
+
+class AEveCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class COPY_STELLARBLADE_API USBEveAtrributeComponent : public UActorComponent
@@ -28,6 +31,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Health")
 	float MaxHealth = 100.f;
+
+private:
+	AEveCharacter* OwnerCharacter = nullptr;
 
 public:	
 	USBEveAtrributeComponent();
