@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SBDefine.h"
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "AnimNotifyState_MovePosition.generated.h"
 
@@ -24,11 +25,14 @@ protected:
     float MoveDistance = 300.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
-    FVector MoveDirection = FVector::ZeroVector;
+    EMoveDirection MoveDirection = EMoveDirection::Front;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
+    FVector2D AdditionalMoveDirection = FVector2D::ZeroVector;
+
+protected:
     FVector StartLocation = FVector::ZeroVector;
 
-    float MoveSpeed = 100.f;
     float ElapsedTime = 0.f;
     float MoveDuration = 0.f;
 

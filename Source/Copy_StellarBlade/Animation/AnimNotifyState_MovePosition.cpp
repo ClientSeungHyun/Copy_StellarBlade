@@ -33,8 +33,29 @@ void UAnimNotifyState_MovePosition::NotifyTick(USkeletalMeshComponent* MeshComp,
         ElapsedTime += FrameDeltaTime;
         float Alpha = FMath::Clamp(ElapsedTime / MoveDuration, 0.f, 1.f);
 
-        FVector Direction = Character->GetActorForwardVector();
+
+        FVector Direction = FVector::ZeroVector;
+        switch (MoveDirection)
+        {
+        case EMoveDirection::Front:
+            Direction = Character->GetActorForwardVector();
+            break;
+        case EMoveDirection::Back:
+            Direction = -Character->GetActorForwardVector();
+            break;
+        case EMoveDirection::Left:
+            Direction = -Character->GetActorRightVector();
+            break;
+        case EMoveDirection::Right:
+            Direction = Character->GetActorRightVector();
+            break;
+        default:
+            break;
+        }
+
         Direction.Z = 0.f;
+        Direction += AdditionalMoveDirection.X * Character->GetActorForwardVector();
+        Direction += AdditionalMoveDirection.Y * Character->GetActorRightVector();
         Direction.Normalize();
 
         FVector TargetLocation = StartLocation + Direction * MoveDistance * Alpha;
