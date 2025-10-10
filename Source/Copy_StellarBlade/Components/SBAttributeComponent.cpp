@@ -77,7 +77,6 @@ void USBAttributeComponent::BroadcastAttributeChanged(ESBAttributeType InAttribu
 
 void USBAttributeComponent::TakeDamageAmount(float DamageAmount)
 {
-	// 체력 차감.
 	BaseHealth = FMath::Clamp(BaseHealth - DamageAmount, 0.f, MaxHealth);
 
 	BroadcastAttributeChanged(ESBAttributeType::Health);

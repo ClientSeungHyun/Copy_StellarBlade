@@ -45,7 +45,7 @@ AMonsterCharacter::AMonsterCharacter()
 	// HealthBar
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
 	HealthBarWidgetComponent->SetupAttachment(GetRootComponent());
-	HealthBarWidgetComponent->SetDrawSize(FVector2D(100.f, 5.f));
+	HealthBarWidgetComponent->SetDrawSize(FVector2D(200.f, 10.f));
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidgetComponent->SetVisibility(false);
 
@@ -57,9 +57,7 @@ AMonsterCharacter::AMonsterCharacter()
 	CombatComponent = CreateDefaultSubobject<USBCombatComponent>(TEXT("Combat"));
 	RotationComponent = CreateDefaultSubobject<URotationComponent>("RotationComponent");
 
-	// OnDeath Delegate에 함수 바인딩.
 	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
-
 	AttributeComponent->OnAttributeChanged.AddUObject(this, &ThisClass::OnAttributeChanged);
 }
 
@@ -172,7 +170,7 @@ void AMonsterCharacter::OnAttributeChanged(ESBAttributeType AttributeType, float
 		{
 			if (UHealthBarWidget* StatBar = Cast<UHealthBarWidget>(HealthBarWidgetComponent->GetWidget()))
 			{
-				//StatBar->SetRatio(InValue);
+				StatBar->SetRatio(InValue);
 			}
 		}
 	}

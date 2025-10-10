@@ -10,8 +10,8 @@
 UENUM(BlueprintType)
 enum class ESBAttributeType : uint8
 {
-    Stamina,
     Health,
+    Stamina,
 };
 
 UENUM(BlueprintType)
