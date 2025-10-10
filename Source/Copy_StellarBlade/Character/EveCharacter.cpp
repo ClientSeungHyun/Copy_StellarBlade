@@ -69,6 +69,7 @@ void AEveCharacter::BeginPlay()
 
 		Sword->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
 		Sword->SetOwner(this);
+		Sword->EquipItem();
 	}
 }
 
@@ -143,6 +144,7 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 	if (AttributeComponent)
 	{
 		AttributeComponent->TakeDamageAmount(ActualDamage);
+		HitReaction(this);
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
 

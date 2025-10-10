@@ -18,7 +18,6 @@ ASBEveWeapon::ASBEveWeapon()
 	WeaponCollision->OnHitActor.AddUObject(this, &ThisClass::OnHitActor);
 
 	WeaponCollision->SetWeaponMesh(SwordMesh);
-	WeaponCollision->AddIgnoredActor(GetOwner()); // 무기를 소유한 Actor은 충돌 무시
 
 	DamageMultiplierMap.Add(SBEveTags::Eve_Attack_NormalAttack, 1.8f);
 	DamageMultiplierMap.Add(SBEveTags::Eve_Attack_SkillAttack, 2.1);
@@ -27,13 +26,17 @@ ASBEveWeapon::ASBEveWeapon()
 void ASBEveWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ASBEveWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ASBEveWeapon::EquipItem()
+{
+	WeaponCollision->AddIgnoredActor(GetOwner());
 }
 
 void ASBEveWeapon::SetLastAttackTag(FGameplayTag tag)

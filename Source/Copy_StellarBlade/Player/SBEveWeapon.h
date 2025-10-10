@@ -47,6 +47,8 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void EquipItem();
+
 	void SetLastAttackTag(FGameplayTag tag);
 	FGameplayTag GetLastAttackTag() { return lastAttackTag; }
 
