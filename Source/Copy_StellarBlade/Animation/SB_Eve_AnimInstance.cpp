@@ -90,5 +90,9 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         bIsSprinting = false;
     }
 
+
+    bIsGuarding = Player->GetIsGuarding();
+    
+
     Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, Player->GetActorRotation());
 }

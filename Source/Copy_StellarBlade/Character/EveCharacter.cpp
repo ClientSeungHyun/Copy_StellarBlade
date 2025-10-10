@@ -2,7 +2,7 @@
 
 
 #include "Character/EveCharacter.h"
-
+#include "SBDefine.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/InputSettings.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -15,6 +15,9 @@
 #include "Components/TargetingComponent.h"
 #include "Animation/SB_Eve_AnimInstance.h"
 #include "Player/SBEveWeapon.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Engine/DamageEvents.h"
 
 AEveCharacter::AEveCharacter()
 {
@@ -30,7 +33,7 @@ AEveCharacter::AEveCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 
 	/** 이동, 감속 속도 */
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->JumpZVelocity = 500;
 
@@ -52,7 +55,7 @@ AEveCharacter::AEveCharacter()
 	TargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("Targeting"));
 	MovementComp = GetCharacterMovement();
 
-	
+	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
 }
 
 void AEveCharacter::BeginPlay()
@@ -112,6 +115,9 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::NewJump);
 
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::IsGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::IsNotGuard);
+
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
 
@@ -128,6 +134,50 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(RightTargetAction, ETriggerEvent::Started, this, &ThisClass::RightTarget);*/
 	}
 
+}
+
+float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+
+	if (AttributeComponent)
+	{
+		AttributeComponent->TakeDamageAmount(ActualDamage);
+		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
+	}
+
+	//if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	//{
+	//	const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+
+	//	// 데미지 방향
+	//	FVector ShotDirection = PointDamageEvent->ShotDirection;
+	//	// 히트 위치 (표면 접촉 관점)
+	//	FVector ImpactPoint = PointDamageEvent->HitInfo.ImpactPoint;
+	//	// 히트 방향
+	//	FVector ImpactDirection = PointDamageEvent->HitInfo.ImpactNormal;
+	//	// 히트한 객체의 Location (객체 중심 관점)
+	//	FVector HitLocation = PointDamageEvent->HitInfo.Location;
+
+	//}
+
+	return ActualDamage;
+}
+
+void AEveCharacter::OnDeath()
+{
+	//if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	//{
+	//	CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//}
+
+	//// Ragdoll
+	//if (USkeletalMeshComponent* MeshComp = GetMesh())
+	//{
+	//	MeshComp->SetCollisionProfileName("Ragdoll");
+	//	MeshComp->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	//	MeshComp->SetSimulatePhysics(true);
+	//}
 }
 
 bool AEveCharacter::IsMoving() const
@@ -148,6 +198,11 @@ void AEveCharacter::Move(const FInputActionValue& Values)
 	{
 		StateComponent->SetState(SBEveTags::Eve_State_Walking);
 	}
+
+	if (isGuarding)
+		GetCharacterMovement()->MaxWalkSpeed = SlowSpeed;
+	else
+		GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 
 	if (Controller != nullptr)
 	{
@@ -213,6 +268,16 @@ void AEveCharacter::NewJump()
 	}
 }
 
+void AEveCharacter::IsGuard()
+{
+	isGuarding = true;
+}
+
+void AEveCharacter::IsNotGuard()
+{
+	isGuarding = false;
+}
+
 void AEveCharacter::CheckLanded()
 {
 	bool bIsFalling = MovementComp->IsFalling();
@@ -266,7 +331,7 @@ void AEveCharacter::DisableComboWindow()
 		bSavedComboInput = false;
 		ComboCounter++;
 		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
-		DoAttack(lastAttackTag);
+		DoAttack(Sword->GetLastAttackTag());
 	}
 	else
 	{
@@ -281,6 +346,7 @@ bool AEveCharacter::CanPerformAttack()
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(SBEveTags::Eve_State_Falling);
 	CheckTags.AddTag(SBEveTags::Eve_State_JumpStart);
+	CheckTags.AddTag(SBEveTags::Eve_State_Guard);
 
 	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false)
 		return true;
@@ -301,7 +367,7 @@ void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
 	check(StateComponent)
 	check(AttributeComponent)
 
-	lastAttackTag = AttackTypeTag;
+	Sword->SetLastAttackTag(AttackTypeTag);
 	StateComponent->ToggleMovementInput(false);
 	isAttacking = true;
 
@@ -324,7 +390,7 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 	{
 		test++;
 		StateComponent->SetState(SBEveTags::Eve_State_Attacking);
-		UE_LOG(LogTemp, Warning, TEXT(">>> ComboSequence Started <<<"));
+		//UE_LOG(LogTemp, Warning, TEXT(">>> ComboSequence Started <<<"));
 		ResetCombo();
 		bComboSequenceRunning = true;
 
@@ -334,10 +400,71 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 
 	if (bCanComboInput)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+		//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
 		// 콤보 윈도우가 열려 있을 때 - 최적의 타이밍
 		bSavedComboInput = true;
 	}
+}
+
+void AEveCharacter::HitReaction(const AActor* Attacker)
+{
+	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
+	{
+		float DelaySeconds = PlayAnimMontage(HitReactAnimMontage);
+	}
+}
+
+UAnimMontage* AEveCharacter::GetHitReactAnimation(const AActor* Attacker) const
+{
+	// LookAt 회전값을 구합니다. (현재 Actor가 공격자를 바라보는 회전값)
+	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
+	// 현재 Actor의 회전값과 LookAt 회전값의 차이를 구합니다.
+	const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(GetActorRotation(), LookAtRotation);
+	// Z축 기준의 회전값 차이만을 취합니다.
+	const float DeltaZ = DeltaRotation.Yaw;
+
+	EHitDirection HitDirection = EHitDirection::Front;
+
+	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
+	{
+		HitDirection = EHitDirection::Front;
+		UE_LOG(LogTemp, Log, TEXT("Front"));
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
+	{
+		HitDirection = EHitDirection::Left;
+		UE_LOG(LogTemp, Log, TEXT("Left"));
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f)
+		|| UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
+	{
+		HitDirection = EHitDirection::Back;
+		UE_LOG(LogTemp, Log, TEXT("Back"));
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
+	{
+		HitDirection = EHitDirection::Right;
+		UE_LOG(LogTemp, Log, TEXT("Right"));
+	}
+
+	UAnimMontage* SelectedMontage = nullptr;
+	switch (HitDirection)
+	{
+	case EHitDirection::Front:
+		SelectedMontage = HitReactAnimFront;
+		break;
+	case EHitDirection::Back:
+		SelectedMontage = HitReactAnimBack;
+		break;
+	case EHitDirection::Left:
+		SelectedMontage = HitReactAnimLeft;
+		break;
+	case EHitDirection::Right:
+		SelectedMontage = HitReactAnimRight;
+		break;
+	}
+
+	return SelectedMontage;
 }
 
 void AEveCharacter::AttackFinished(const float ComboResetDelay)

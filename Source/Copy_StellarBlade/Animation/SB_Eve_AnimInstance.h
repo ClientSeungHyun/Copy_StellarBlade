@@ -44,6 +44,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	float Direction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	bool bIsGuarding;
+
 private:
 	USBStateComponent* PlayerStateComp = nullptr;
 public:

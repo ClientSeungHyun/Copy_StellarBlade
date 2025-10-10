@@ -50,6 +50,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* Skill_AttackAction;
 
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* Guard_Action;
+
 	/** LockedOn */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LockOnTargetAction;
@@ -78,11 +81,28 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float NormalSpeed = 400.f;
 
+	/** 걷는 속도 */
+	UPROPERTY(EditAnywhere, Category = "Sprinting")
+	float SlowSpeed = 200.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASBEveWeapon> SwordClass;
 
 	UPROPERTY()
 	ASBEveWeapon* Sword;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
+	UAnimMontage* HitReactAnimFront;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
+	UAnimMontage* HitReactAnimBack;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
+	UAnimMontage* HitReactAnimLeft;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
+	UAnimMontage* HitReactAnimRight;
 
 protected: //Combo System
 	//콤보 작동 중인지
@@ -103,6 +123,7 @@ protected: //Combo System
 private:
 	bool isJumping = false;
 	bool isAttacking = false;
+	bool isGuarding = false;
 
 	FGameplayTag lastAttackTag;
 
@@ -119,12 +140,20 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual float TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventController, AActor* DamageCauser) override;
+
+	virtual void OnDeath();
+
 public:
 	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; };
 
 	void EnableComboWindow();
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
+
+
+	bool GetIsGuarding() { return isGuarding; }
+	ASBEveWeapon* GetWeapon() { return Sword; }
 
 	UCharacterMovementComponent* MovementComp = nullptr;
 
@@ -142,6 +171,8 @@ protected:
 
 	void Idle();
 	void NewJump();
+	void IsGuard();
+	void IsNotGuard();
 	void CheckLanded();
 
 	/** LockedOn */
@@ -156,4 +187,7 @@ protected:
 	void ResetCombo();
 	void DoAttack(const FGameplayTag& AttackTypeTag);
 	void ExecuteComboAttack(const FGameplayTag& AttackTypeTag);
+
+	void HitReaction(const AActor* Attacker);
+	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
 };
