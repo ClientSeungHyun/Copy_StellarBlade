@@ -348,9 +348,8 @@ bool AEveCharacter::CanPerformAttack()
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(SBEveTags::Eve_State_Falling);
 	CheckTags.AddTag(SBEveTags::Eve_State_JumpStart);
-	CheckTags.AddTag(SBEveTags::Eve_State_Guard);
 
-	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false)
+	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false && isGuarding == false)
 		return true;
 	else
 		return false;
