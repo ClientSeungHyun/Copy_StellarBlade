@@ -412,6 +412,9 @@ void AEveCharacter::HitReaction(const AActor* Attacker)
 	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
 	{
 		float DelaySeconds = PlayAnimMontage(HitReactAnimMontage);
+
+		if (isAttacking)
+			isAttacking = false;
 	}
 }
 
