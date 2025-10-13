@@ -119,11 +119,15 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::IsGuard);
 		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::IsNotGuard);
 
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+		EnhancedInputComponent->BindAction(MoveAction_F, ETriggerEvent::Triggered, this, &ThisClass::Pressed_W);
+		EnhancedInputComponent->BindAction(MoveAction_B, ETriggerEvent::Triggered, this, &ThisClass::Pressed_S);
+		EnhancedInputComponent->BindAction(MoveAction_L, ETriggerEvent::Triggered, this, &ThisClass::Pressed_A);
+		EnhancedInputComponent->BindAction(MoveAction_R, ETriggerEvent::Triggered, this, &ThisClass::Pressed_D);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
 
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Started, this, &ThisClass::Dodge);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
 
 		//어색하면 Cancle사용
 		EnhancedInputComponent->BindAction(Normal_AttackAction, ETriggerEvent::Started, this, &ThisClass::NormalAttack);
@@ -230,6 +234,46 @@ void AEveCharacter::Look(const FInputActionValue& Values)
 	}
 }
 
+void AEveCharacter::Pressed_W(const FInputActionValue& Values)
+{
+	isPressed_W = true;
+	isPressed_A = false;
+	isPressed_S = false;
+	isPressed_D = false;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_A(const FInputActionValue& Values)
+{
+	isPressed_W = false;
+	isPressed_A = true;
+	isPressed_S = false;
+	isPressed_D = false;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_S(const FInputActionValue& Values)
+{
+	isPressed_W = false;
+	isPressed_A = false;
+	isPressed_S = true;
+	isPressed_D = false;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_D(const FInputActionValue& Values)
+{
+	isPressed_W = false;
+	isPressed_A = false;
+	isPressed_S = false;
+	isPressed_D = true;
+
+	Move(Values);
+}
+
 void AEveCharacter::Running()
 {
 	if (IsMoving())
@@ -250,6 +294,10 @@ void AEveCharacter::Running()
 void AEveCharacter::StopRunning()
 {
 	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+}
+
+void AEveCharacter::Dodge()
+{
 }
 
 void AEveCharacter::Idle()
