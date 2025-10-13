@@ -116,6 +116,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimRight;
 
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimFront;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimBack;
+
 protected: //Combo System
 	//콤보 작동 중인지
 	bool bComboSequenceRunning = false;
@@ -188,6 +194,10 @@ protected:
 	void Pressed_A(const struct FInputActionValue& Values);
 	void Pressed_S(const struct FInputActionValue& Values);
 	void Pressed_D(const struct FInputActionValue& Values);
+	void Unpress_W();
+	void Unpress_A();
+	void Unpress_S();
+	void Unpress_D();
 
 	void Running();
 	void StopRunning();

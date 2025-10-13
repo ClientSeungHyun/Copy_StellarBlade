@@ -51,8 +51,7 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     }
      else if(GroundSpeed > 1.f && bIsFalling == false)
     {
-        bIsRunning = true;
-        bIsSprinting = false;
+        bIsRunning = true;  
     }*/
 
     //UE_LOG(LogTemp, Warning, TEXT("bIsRunning: %d"), bIsRunning);
@@ -67,7 +66,8 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     if (GroundSpeed < 1.f && bIsFalling == false)
     {
-        PlayerStateComp->SetState(SBEveTags::Eve_State_Idle);
+        if(IsAnyMontagePlaying() == false)
+            PlayerStateComp->SetState(SBEveTags::Eve_State_Idle);
     }
 
     if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Running){
