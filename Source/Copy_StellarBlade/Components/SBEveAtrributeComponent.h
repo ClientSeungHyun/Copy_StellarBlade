@@ -32,6 +32,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Health")
 	float MaxHealth = 100.f;
 
+	UPROPERTY(EditAnywhere, Category = "Health")
+	float CurrentBetaEnergy = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = "Health")
+	float MaxBetaEnergy = 100.f;
+
 private:
 	AEveCharacter* OwnerCharacter = nullptr;
 
@@ -53,5 +59,8 @@ public:
 	/** 스텟 변경을 통지하는 Broadcast Function */
 	void BroadcastAttributeChanged(ESBAttributeType InAttributeType) const;
 	void TakeDamageAmount(float DamageAmount);
-		
+	
+	float GetBetaEnergyRatio() const { return CurrentBetaEnergy / MaxBetaEnergy; };
+	void AddBetaEnergy(float num = 20);
+	void ResetBetaEnergy() { CurrentBetaEnergy = 0.f; };
 };

@@ -394,9 +394,10 @@ void AEveCharacter::NormalAttack()
 
 void AEveCharacter::SkillAttack()
 {
-	if (CanPerformAttack() == false)
+	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergyRatio() < 1.0f)
 		return;
 
+	AttributeComponent->ResetBetaEnergy();
 	ExecuteComboAttack(SBEveTags::Eve_Attack_SkillAttack);
 }
 

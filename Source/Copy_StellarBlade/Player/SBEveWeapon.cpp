@@ -6,6 +6,8 @@
 #include "Data/SBMontageActionData.h"
 #include "Components/SBWeaponCollisionComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Character/EveCharacter.h"
+#include "Components/SBEveAtrributeComponent.h"
 
 // Sets default values
 ASBEveWeapon::ASBEveWeapon()
@@ -21,6 +23,8 @@ ASBEveWeapon::ASBEveWeapon()
 
 	DamageMultiplierMap.Add(SBEveTags::Eve_Attack_NormalAttack, 1.8f);
 	DamageMultiplierMap.Add(SBEveTags::Eve_Attack_SkillAttack, 2.1);
+
+	
 }
 
 void ASBEveWeapon::BeginPlay()
@@ -49,13 +53,20 @@ UAnimMontage* ASBEveWeapon::GetMontageForTag(const FGameplayTag& Tag, const int3
 	return MontageActionData->GetMontageForTag(Tag, Index);
 }
 
-float ASBEveWeapon::GetAttackDamage() const
+float ASBEveWeapon::GetAttackDamage()
 {
 	if (const AActor* OwnerActor = GetOwner())
 	{
 		if (DamageMultiplierMap.Contains(lastAttackTag))
 		{
 			const float Multiplier = DamageMultiplierMap[lastAttackTag];
+			
+			if (Owner == nullptr)
+			{
+				Owner = Cast<AEveCharacter>(GetOwner());
+			}
+			Owner->GetAttributeComponent()->AddBetaEnergy();
+			
 			return BaseDamage * Multiplier;
 		}
 	}

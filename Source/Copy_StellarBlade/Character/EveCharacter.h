@@ -171,11 +171,11 @@ public:
 
 public:
 	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; };
+	USBEveAtrributeComponent* GetAttributeComponent()  { return AttributeComponent; };
 
 	void EnableComboWindow();
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
-
 
 	bool GetIsGuarding() { return isGuarding; }
 	ASBEveWeapon* GetWeapon() { return Sword; }
@@ -224,4 +224,5 @@ protected:
 
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
+
 };
