@@ -33,13 +33,22 @@ private:
 	class UInputMappingContext* DefaultMappingContext;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MoveAction;
+	class UInputAction* MoveAction_F;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MoveAction_B;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MoveAction_L;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MoveAction_R;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* RunAction;
+	class UInputAction* RunDodgeAction;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* JumpAction;
@@ -91,6 +100,9 @@ protected:
 	UPROPERTY()
 	ASBEveWeapon* Sword;
 
+	UPROPERTY(EditAnywhere, Category = "Run/Dodge")
+	float DodgeThreshold = 0.25f; // 0.25초 이하로 누르면 회피
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimFront;
@@ -103,6 +115,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimRight;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimFront;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimBack;
 
 protected: //Combo System
 	//콤보 작동 중인지
@@ -125,6 +143,14 @@ private:
 	bool isAttacking = false;
 	bool isGuarding = false;
 
+	bool isPressed_W = false;
+	bool isPressed_A = false;
+	bool isPressed_S = false;
+	bool isPressed_D = false;
+
+	float ShiftPressedTime = 0.0f;
+	float GuardStartTime = 0.0f;
+
 	FGameplayTag lastAttackTag;
 
 public:
@@ -146,11 +172,11 @@ public:
 
 public:
 	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; };
+	USBEveAtrributeComponent* GetAttributeComponent()  { return AttributeComponent; };
 
 	void EnableComboWindow();
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
-
 
 	bool GetIsGuarding() { return isGuarding; }
 	ASBEveWeapon* GetWeapon() { return Sword; }
@@ -164,15 +190,26 @@ protected:
 protected:
 	void Move(const struct FInputActionValue& Values);
 	void Look(const struct FInputActionValue& Values);
-	/** 질주 */
+
+	void Pressed_W(const struct FInputActionValue& Values);
+	void Pressed_A(const struct FInputActionValue& Values);
+	void Pressed_S(const struct FInputActionValue& Values);
+	void Pressed_D(const struct FInputActionValue& Values);
+	void Unpress_W();
+	void Unpress_A();
+	void Unpress_S();
+	void Unpress_D();
+
 	void Running();
-	/** 질주 중단 */
 	void StopRunning();
+	void Dodge();
 
 	void Idle();
 	void NewJump();
-	void IsGuard();
-	void IsNotGuard();
+	void StartGuard();
+	void EndGuard();
+	void PerfectGuard();
+
 	void CheckLanded();
 
 	/** LockedOn */
@@ -190,4 +227,5 @@ protected:
 
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
+
 };

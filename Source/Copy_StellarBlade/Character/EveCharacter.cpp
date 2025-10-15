@@ -82,11 +82,11 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	CheckLanded();
 
-	/*if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
-		UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
-	}*/
+	//if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
+	//	UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
+	//}
 
 	//if (!Sword)
 	//{
@@ -116,14 +116,22 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::NewJump);
 
-		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::IsGuard);
-		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::IsNotGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::StartGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::EndGuard);
 
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+		EnhancedInputComponent->BindAction(MoveAction_F, ETriggerEvent::Triggered, this, &ThisClass::Pressed_W);
+		EnhancedInputComponent->BindAction(MoveAction_B, ETriggerEvent::Triggered, this, &ThisClass::Pressed_S);
+		EnhancedInputComponent->BindAction(MoveAction_L, ETriggerEvent::Triggered, this, &ThisClass::Pressed_A);
+		EnhancedInputComponent->BindAction(MoveAction_R, ETriggerEvent::Triggered, this, &ThisClass::Pressed_D);
+		EnhancedInputComponent->BindAction(MoveAction_F, ETriggerEvent::Completed, this, &ThisClass::Unpress_W);
+		EnhancedInputComponent->BindAction(MoveAction_B, ETriggerEvent::Completed, this, &ThisClass::Unpress_S);
+		EnhancedInputComponent->BindAction(MoveAction_L, ETriggerEvent::Completed, this, &ThisClass::Unpress_A);
+		EnhancedInputComponent->BindAction(MoveAction_R, ETriggerEvent::Completed, this, &ThisClass::Unpress_D);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
 
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Started, this, &ThisClass::Dodge);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
 
 		//어색하면 Cancle사용
 		EnhancedInputComponent->BindAction(Normal_AttackAction, ETriggerEvent::Started, this, &ThisClass::NormalAttack);
@@ -140,6 +148,7 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+
 
 	if (AttributeComponent)
 	{
@@ -194,28 +203,33 @@ bool AEveCharacter::IsMoving() const
 
 void AEveCharacter::Move(const FInputActionValue& Values)
 {
-	FVector2D MovementVector = Values.Get<FVector2D>();
+	check(StateComponent);
 
-	if (isJumping == false)
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
+
+	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false && isJumping == false)
 	{
+		FVector2D MovementVector = Values.Get<FVector2D>();
+
 		StateComponent->SetState(SBEveTags::Eve_State_Walking);
-	}
 
-	if (isGuarding)
-		GetCharacterMovement()->MaxWalkSpeed = SlowSpeed;
-	else
-		GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+		if (isGuarding)
+			GetCharacterMovement()->MaxWalkSpeed = SlowSpeed;
+		else
+			GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 
-	if (Controller != nullptr)
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotator(0, Rotation.Yaw, 0);
+		if (Controller != nullptr)
+		{
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotator(0, Rotation.Yaw, 0);
 
-		const FVector ForwardVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
-		const FVector RightVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
+			const FVector ForwardVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
+			const FVector RightVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
 
-		AddMovementInput(ForwardVector, MovementVector.Y);
-		AddMovementInput(RightVector, MovementVector.X);
+			AddMovementInput(ForwardVector, MovementVector.Y);
+			AddMovementInput(RightVector, MovementVector.X);
+		}
 	}
 }
 
@@ -230,26 +244,96 @@ void AEveCharacter::Look(const FInputActionValue& Values)
 	}
 }
 
+void AEveCharacter::Pressed_W(const FInputActionValue& Values)
+{
+	isPressed_W = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_A(const FInputActionValue& Values)
+{
+	isPressed_A = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_S(const FInputActionValue& Values)
+{
+	isPressed_S = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_D(const FInputActionValue& Values)
+{
+	isPressed_D = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Unpress_W()
+{
+	isPressed_W = false;
+}
+
+void AEveCharacter::Unpress_A()
+{
+	isPressed_A = false;
+}
+
+void AEveCharacter::Unpress_S()
+{
+	isPressed_S = false;
+}
+
+void AEveCharacter::Unpress_D()
+{
+	isPressed_D = false;
+}
+
 void AEveCharacter::Running()
 {
-	if (IsMoving())
-	{
-		if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_Walking)
-		{
-			StateComponent->SetState(SBEveTags::Eve_State_Running);
-		}
+	check(StateComponent);
 
-		GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
-	}
-	else
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
+
+	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false)
 	{
-		StopRunning();
+		if (IsMoving())
+		{
+			if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_Walking)
+			{
+				StateComponent->SetState(SBEveTags::Eve_State_Running);
+			}
+
+			GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
+		}
+		else
+		{
+			StopRunning();
+		}
 	}
 }
 
 void AEveCharacter::StopRunning()
 {
 	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+}
+
+void AEveCharacter::Dodge()
+{
+	StateComponent->SetState(SBEveTags::Eve_State_Dodge);
+
+	if (isPressed_W)
+	{
+		PlayAnimMontage(DodgeAnimFront);
+	}
+	else
+	{
+		PlayAnimMontage(DodgeAnimBack);
+	}
 }
 
 void AEveCharacter::Idle()
@@ -270,14 +354,21 @@ void AEveCharacter::NewJump()
 	}
 }
 
-void AEveCharacter::IsGuard()
+void AEveCharacter::StartGuard()
 {
 	isGuarding = true;
+	GuardStartTime = GetWorld()->GetTimeSeconds();
 }
 
-void AEveCharacter::IsNotGuard()
+void AEveCharacter::EndGuard()
 {
 	isGuarding = false;
+}
+
+void AEveCharacter::PerfectGuard()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+	AttributeComponent->AddBetaEnergy();
 }
 
 void AEveCharacter::CheckLanded()
@@ -294,7 +385,6 @@ void AEveCharacter::CheckLanded()
 		isJumping = false;
 		Idle();
 	}
-
 }
 
 void AEveCharacter::LockOnTarget()
@@ -312,16 +402,17 @@ void AEveCharacter::NormalAttack()
 
 void AEveCharacter::SkillAttack()
 {
-	if (CanPerformAttack() == false)
+	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergyRatio() < 1.0f)
 		return;
 
+	AttributeComponent->ResetBetaEnergy();
 	ExecuteComboAttack(SBEveTags::Eve_Attack_SkillAttack);
 }
 
 void AEveCharacter::EnableComboWindow()
 {
 	bCanComboInput = true;
-	UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
+	//UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
 }
 
 void AEveCharacter::DisableComboWindow()
@@ -332,12 +423,12 @@ void AEveCharacter::DisableComboWindow()
 	{
 		bSavedComboInput = false;
 		ComboCounter++;
-		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
+		//UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
 		DoAttack(Sword->GetLastAttackTag());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: No input received"));
+		//UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: No input received"));
 	}
 }
 
@@ -348,9 +439,10 @@ bool AEveCharacter::CanPerformAttack()
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(SBEveTags::Eve_State_Falling);
 	CheckTags.AddTag(SBEveTags::Eve_State_JumpStart);
-	CheckTags.AddTag(SBEveTags::Eve_State_Guard);
+	CheckTags.AddTag(SBEveTags::Eve_State_Hit);
+	CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
 
-	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false)
+	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false && isGuarding == false)
 		return true;
 	else
 		return false;
@@ -387,7 +479,6 @@ void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
 void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 {
 	static int32 test = 0;
-	//StateComponent->GetCurrentState() != SBEveTags::Eve_State_Attacking
 	if (isAttacking == false)
 	{
 		test++;
@@ -410,9 +501,23 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 
 void AEveCharacter::HitReaction(const AActor* Attacker)
 {
+	float HitTime = GetWorld()->GetTimeSeconds();
+
+	//퍼팩트 패링(가드)
+	if (HitTime - GuardStartTime <= 0.2f)
+	{
+		PerfectGuard();
+		return;
+	}
+
 	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
 	{
+		StateComponent->SetState(SBEveTags::Eve_State_Hit);
+
 		float DelaySeconds = PlayAnimMontage(HitReactAnimMontage);
+
+		if (isAttacking)
+			isAttacking = false;
 	}
 }
 
@@ -430,23 +535,23 @@ UAnimMontage* AEveCharacter::GetHitReactAnimation(const AActor* Attacker) const
 	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
 	{
 		HitDirection = EHitDirection::Front;
-		UE_LOG(LogTemp, Log, TEXT("Front"));
+		//UE_LOG(LogTemp, Log, TEXT("Front"));
 	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
 	{
 		HitDirection = EHitDirection::Left;
-		UE_LOG(LogTemp, Log, TEXT("Left"));
+		//UE_LOG(LogTemp, Log, TEXT("Left"));
 	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f)
 		|| UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
 	{
 		HitDirection = EHitDirection::Back;
-		UE_LOG(LogTemp, Log, TEXT("Back"));
+		//UE_LOG(LogTemp, Log, TEXT("Back"));
 	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
 	{
 		HitDirection = EHitDirection::Right;
-		UE_LOG(LogTemp, Log, TEXT("Right"));
+		//UE_LOG(LogTemp, Log, TEXT("Right"));
 	}
 
 	UAnimMontage* SelectedMontage = nullptr;
@@ -471,7 +576,7 @@ UAnimMontage* AEveCharacter::GetHitReactAnimation(const AActor* Attacker) const
 
 void AEveCharacter::AttackFinished(const float ComboResetDelay)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AttackFinished"));
+	//UE_LOG(LogTemp, Warning, TEXT("AttackFinished"));
 	if (StateComponent)
 	{
 		StateComponent->ToggleMovementInput(true);
@@ -479,6 +584,7 @@ void AEveCharacter::AttackFinished(const float ComboResetDelay)
 	}
 	// ComboResetDelay 후에 콤보 시퀀스 종료
 	GetWorld()->GetTimerManager().SetTimer(ComboResetTimerHandle, this, &ThisClass::ResetCombo, ComboResetDelay, false);
+	Idle();
 }
 
 //void AEveCharacter::LeftTarget()
