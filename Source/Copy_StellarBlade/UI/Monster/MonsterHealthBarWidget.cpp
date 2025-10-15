@@ -24,7 +24,23 @@ void UMonsterHealthBarWidget::NativePreConstruct()
             DynamicMaterial = UMaterialInstanceDynamic::Create(Material, this);
             Image_HP->SetBrushFromMaterial(DynamicMaterial);
 
-            DynamicMaterial->SetScalarParameterValue(FName("Ratio"), 0.5f);
+            DynamicMaterial->SetScalarParameterValue(FName("Ratio"), 1.f);
         }
     }
+}
+
+void UMonsterHealthBarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    Super::NativeTick(MyGeometry, InDeltaTime);
+
+    if (DynamicMaterial)
+    {
+        CurrentRatio = FMath::FInterpTo(CurrentRatio, TargetRatio, InDeltaTime, 2.5f);
+        DynamicMaterial->SetScalarParameterValue(FName("Ratio"), CurrentRatio);
+    }
+}
+
+void UMonsterHealthBarWidget::SetRatio(float Ratio)
+{
+    TargetRatio = Ratio;
 }

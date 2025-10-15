@@ -10,13 +10,14 @@
 
 
 class USBStateComponent;
-class USBAttributeComponent;
+class UMonsterAttributeComponent;
 class ATargetPoint;
 class USBCombatComponent;
 class ASBWeapon;
 class URotationComponent;
 class UWidgetComponent;
 class USphereComponent;
+class UProceduralMeshComponent;
 
 UCLASS()
 class COPY_STELLARBLADE_API AMonsterCharacter : public ACharacter, public ITargetingInterface, public ISBCombatInterface
@@ -28,7 +29,7 @@ protected:
 	USphereComponent* TargetingSphereComponent;
 
 	UPROPERTY(VisibleAnywhere)
-	USBAttributeComponent* AttributeComponent;
+	UMonsterAttributeComponent* AttributeComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	USBStateComponent* StateComponent;
@@ -45,7 +46,7 @@ protected:
 
 	/** HealthBar */
 	UPROPERTY(VisibleAnywhere)
-	UWidgetComponent* HealthBarWidgetComponent;
+	UWidgetComponent* MonsterStatBarWidget;
 
 	UPROPERTY(EditAnywhere)
 	float HealthBarOffsetPosY = 100.f;
@@ -81,8 +82,9 @@ public:
 
 protected:
 	virtual void OnDeath();
-	void OnAttributeChanged(ESBAttributeType AttributeType, float InValue);
-	void SetupHealthBar();
+	void SliceMesh(FName BoneName);
+
+	UProceduralMeshComponent* CreateProceduralMeshFromBone(USkeletalMeshComponent* SkeletalMesh, const FName& BoneName);
 
 protected:
 	void ImpactEffect(const FVector& Location);
@@ -100,7 +102,7 @@ public:
 	virtual bool IsCombatEnabled() override;
 
 	// 체력바 토글
-	void ToggleHealthBarVisibility(bool bVisibility);
+	void ToggleMonsterStateVisibility(bool bVisibility);
 
 public:
 	FORCEINLINE ATargetPoint* GetPatrolPoint()

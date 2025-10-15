@@ -2,8 +2,10 @@
 
 
 #include "UI/Monster/MonsterStatBarWidget.h"
-#include "Components/SBAttributeComponent.h"
+#include "Components/MonsterAttributeComponent.h"
 #include "UI/Monster/MonsterHealthBarWidget.h"
+#include "UI/Monster/MonsterShieldGageWidget.h"
+#include "Character/Monster/MonsterCharacter.h"
 
 UMonsterStatBarWidget::UMonsterStatBarWidget(const FObjectInitializer& ObjectInitializer)
 	:Super{ ObjectInitializer }
@@ -14,23 +16,29 @@ void UMonsterStatBarWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (APawn* OwningPawn = GetOwningPlayerPawn())
+	if (OwnerMonster)
 	{
-		if (USBAttributeComponent* Attribute = OwningPawn->GetComponentByClass<USBAttributeComponent>())
+		if (UMonsterAttributeComponent* Attribute = OwnerMonster->GetComponentByClass<UMonsterAttributeComponent>())
 		{
 			Attribute->OnAttributeChanged.AddUObject(this, &ThisClass::OnAttributeChanged);
-			Attribute->BroadcastAttributeChanged(ESBAttributeType::Health);
-			Attribute->BroadcastAttributeChanged(ESBAttributeType::Stamina);
+			Attribute->BroadcastAttributeChanged(EAttributeType::Health);
+			Attribute->BroadcastAttributeChanged(EAttributeType::Shield);
+			Attribute->BroadcastAttributeChanged(EAttributeType::Stamina);
+
+			ShieldGageWidget->InitGage();
 		}
 	}
 }
 
-void UMonsterStatBarWidget::OnAttributeChanged(ESBAttributeType AttributeType, float InRatio)
+void UMonsterStatBarWidget::OnAttributeChanged(EAttributeType AttributeType, float InRatio)
 {
 	switch (AttributeType)
 	{
-	case ESBAttributeType::Health:
+	case EAttributeType::Health:
 		HealthBarWidget->SetRatio(InRatio);
+		break;
+	case EAttributeType::Shield:
+		ShieldGageWidget->SetGage((int)InRatio);
 		break;
 	//case ESBAttributeType::Stamina:
 	//	StaminaBarWidget->SetRatio(InValue);

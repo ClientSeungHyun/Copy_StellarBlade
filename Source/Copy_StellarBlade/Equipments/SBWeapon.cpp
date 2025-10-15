@@ -112,21 +112,23 @@ UAnimMontage* ASBWeapon::GetHitReactMontage(const AActor* Attacker) const
 	switch (HitDirection)
 	{
 	case EHitDirection::Front_L:
-		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 0);
+		SelectedMontage = GetMontageForTag(SBGameplayTags::Monster_State_Hit, 0);
 		break;
 	case EHitDirection::Front_R:
-		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 1);
+		SelectedMontage = GetMontageForTag(SBGameplayTags::Monster_State_Hit, 1);
 		break;
 	case EHitDirection::Back:
-		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 2);
+		SelectedMontage = GetMontageForTag(SBGameplayTags::Monster_State_Hit, 2);
 		break;
 	case EHitDirection::Left:
-		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 3);
+		SelectedMontage = GetMontageForTag(SBGameplayTags::Monster_State_Hit, 3);
 		break;
 	case EHitDirection::Right:
-		SelectedMontage = GetMontageForTag(SBGameplayTags::Character_Action_HitReaction, 4);
+		SelectedMontage = GetMontageForTag(SBGameplayTags::Monster_State_Hit, 4);
 		break;
 	}
+
+	CombatComponent->FinishAttack();
 
 	return SelectedMontage;
 }
