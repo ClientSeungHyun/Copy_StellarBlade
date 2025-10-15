@@ -149,6 +149,7 @@ private:
 	bool isPressed_D = false;
 
 	float ShiftPressedTime = 0.0f;
+	float GuardStartTime = 0.0f;
 
 	FGameplayTag lastAttackTag;
 
@@ -205,8 +206,10 @@ protected:
 
 	void Idle();
 	void NewJump();
-	void IsGuard();
-	void IsNotGuard();
+	void StartGuard();
+	void EndGuard();
+	void PerfectGuard();
+
 	void CheckLanded();
 
 	/** LockedOn */

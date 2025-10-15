@@ -82,11 +82,11 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	CheckLanded();
 
-	if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
-		UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
-	}
+	//if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
+	//	UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
+	//}
 
 	//if (!Sword)
 	//{
@@ -116,8 +116,8 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::NewJump);
 
-		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::IsGuard);
-		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::IsNotGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::StartGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::EndGuard);
 
 		EnhancedInputComponent->BindAction(MoveAction_F, ETriggerEvent::Triggered, this, &ThisClass::Pressed_W);
 		EnhancedInputComponent->BindAction(MoveAction_B, ETriggerEvent::Triggered, this, &ThisClass::Pressed_S);
@@ -148,6 +148,7 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+
 
 	if (AttributeComponent)
 	{
@@ -353,14 +354,21 @@ void AEveCharacter::NewJump()
 	}
 }
 
-void AEveCharacter::IsGuard()
+void AEveCharacter::StartGuard()
 {
 	isGuarding = true;
+	GuardStartTime = GetWorld()->GetTimeSeconds();
 }
 
-void AEveCharacter::IsNotGuard()
+void AEveCharacter::EndGuard()
 {
 	isGuarding = false;
+}
+
+void AEveCharacter::PerfectGuard()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+	AttributeComponent->AddBetaEnergy();
 }
 
 void AEveCharacter::CheckLanded()
@@ -404,7 +412,7 @@ void AEveCharacter::SkillAttack()
 void AEveCharacter::EnableComboWindow()
 {
 	bCanComboInput = true;
-	UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
+	//UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
 }
 
 void AEveCharacter::DisableComboWindow()
@@ -415,12 +423,12 @@ void AEveCharacter::DisableComboWindow()
 	{
 		bSavedComboInput = false;
 		ComboCounter++;
-		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
+		//UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
 		DoAttack(Sword->GetLastAttackTag());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: No input received"));
+		//UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: No input received"));
 	}
 }
 
@@ -493,6 +501,15 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 
 void AEveCharacter::HitReaction(const AActor* Attacker)
 {
+	float HitTime = GetWorld()->GetTimeSeconds();
+
+	//퍼팩트 패링(가드)
+	if (HitTime - GuardStartTime <= 0.2f)
+	{
+		PerfectGuard();
+		return;
+	}
+
 	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
 	{
 		StateComponent->SetState(SBEveTags::Eve_State_Hit);

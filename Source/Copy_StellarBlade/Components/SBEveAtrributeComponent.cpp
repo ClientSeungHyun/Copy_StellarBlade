@@ -76,6 +76,6 @@ void USBEveAtrributeComponent::AddBetaEnergy(float num)
 {
 	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy + num, 0.0f, 100.0f);
 
-	UE_LOG(LogTemp, Warning, TEXT("%f"), CurrentBetaEnergy);
+	UE_LOG(LogTemp, Warning, TEXT("BetaEnergy : %f"), CurrentBetaEnergy);
 }
 
