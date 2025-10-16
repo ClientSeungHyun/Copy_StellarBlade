@@ -43,8 +43,8 @@ AMonsterCharacter::AMonsterCharacter()
 	// LockOn À§Á¬.
 	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
 	LockOnWidgetComponent->SetupAttachment(GetRootComponent());
-	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
-	LockOnWidgetComponent->SetDrawSize(FVector2D(30.f, 30.f));
+	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
+	LockOnWidgetComponent->SetDrawSize(FVector2D(15.f, 15.f));
 	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	LockOnWidgetComponent->SetVisibility(false);
 
@@ -131,7 +131,7 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 
 	if (AttributeComponent)
 	{
-		AttributeComponent->TakeDamageAmount(ActualDamage * 1000.f);
+		AttributeComponent->TakeDamageAmount(ActualDamage);
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
 
