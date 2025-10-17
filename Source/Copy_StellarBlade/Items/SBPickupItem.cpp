@@ -11,7 +11,7 @@ ASBPickupItem::ASBPickupItem()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PickupItemMesh"));
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PickupItemMesh"));
 	SetRootComponent(Mesh);
 
 	// Collision ¼³Á¤.

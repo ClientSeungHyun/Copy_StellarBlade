@@ -43,7 +43,7 @@ void ASBEquipment::EquipItem(bool isSubWeapon)
 {
 }
 
-void ASBEquipment::UnequipItem()
+void ASBEquipment::UnequipItem(bool isSubWeapon)
 {
 }
 

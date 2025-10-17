@@ -59,6 +59,10 @@ void ASBWeapon::EquipItem(bool isSubWeapon)
 	}
 }
 
+void ASBWeapon::UnequipItem(bool isSubWeapon)
+{
+}
+
 UAnimMontage* ASBWeapon::GetMontageForTag(const FGameplayTag& Tag, const int32 Index) const
 {
 	return MontageActionData->GetMontageForTag(Tag, Index);
@@ -131,6 +135,11 @@ UAnimMontage* ASBWeapon::GetHitReactMontage(const AActor* Attacker) const
 	CombatComponent->FinishAttack();
 
 	return SelectedMontage;
+}
+
+bool ASBWeapon::IsHaveBlinkAttack() const
+{
+	return MontageActionData->IsHaveMontageForTag(SBGameplayTags::Monster_Attack_Blink);
 }
 
 float ASBWeapon::GetStaminaCost(const FGameplayTag& InTag) const

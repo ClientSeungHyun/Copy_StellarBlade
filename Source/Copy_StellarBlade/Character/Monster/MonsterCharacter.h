@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "Interfaces/SBCombatInterface.h"
 #include "Interfaces/TargetingInterface.h"
+
+#include "ProceduralMeshComponent.h"
 #include "MonsterCharacter.generated.h"
 
 
@@ -23,6 +25,20 @@ UCLASS()
 class COPY_STELLARBLADE_API AMonsterCharacter : public ACharacter, public ITargetingInterface, public ISBCombatInterface
 {
 	GENERATED_BODY()
+
+protected:
+	bool isDead = false;
+
+	int8 CurrentAttackCount = 0;
+
+	bool bAllowCounterAttack_Blink = false;
+	bool bAllowCounterAttack_Repulse = false;
+
+	UPROPERTY(EditAnywhere, Category = "SpecialAttack")
+	int8 BlinklAttackCount = 3;
+
+	UPROPERTY(EditAnywhere, Category = "SpecialAttack")
+	int8 RepulseAttackCount = 4;
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -52,6 +68,10 @@ protected:
 	float HealthBarOffsetPosY = 100.f;
 
 protected:
+	UPROPERTY(VisibleAnywhere)
+	UProceduralMeshComponent* ProcMeshComponent;
+
+protected:
 	UPROPERTY(EditAnywhere, Category = "Effect")
 	USoundCue* ImpactSound;
 
@@ -69,6 +89,32 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<TSubclassOf<ASBWeapon>> DefaultWeaponClass;
 
+protected:
+	UPROPERTY(EditAnywhere, Category = "Slice")
+	FName TargetBoneName = "upperarm_l";
+
+	UPROPERTY(EditAnywhere, Category = "Slice")
+	float CreateProceduralMeshDistance = 20.f;
+
+	UPROPERTY(EditAnywhere, Category = "Slice")
+	FName ProceduralMeshAttachSocketName = "ProcedrualMesh_Attach";
+
+	UPROPERTY(EditAnywhere, Category = "Slice")
+	FName OtherHalfMeshAttachSocketName = "OtherHalfMesh_Attach";
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slice")
+	UMaterialInterface* CapMaterial;
+
+	int32 NumVertices = 0;
+	TMap<int32, int32> VertexIndexMap;
+	TArray<FVector> FilteredVerticesArray;
+	TArray<int32> Indices;
+	TArray<FVector> Normals;
+	TArray<FProcMeshTangent> Tangents;
+	TArray<FVector2D> UV;
+	TArray<FColor> VertexColors;
+	TArray<FColor> Colors;
+
 public:
 	AMonsterCharacter();
 
@@ -82,9 +128,6 @@ public:
 
 protected:
 	virtual void OnDeath();
-	void SliceMesh(FName BoneName);
-
-	UProceduralMeshComponent* CreateProceduralMeshFromBone(USkeletalMeshComponent* SkeletalMesh, const FName& BoneName);
 
 protected:
 	void ImpactEffect(const FVector& Location);
@@ -105,6 +148,12 @@ public:
 	void ToggleMonsterStateVisibility(bool bVisibility);
 
 public:
+	void SelectVertices(int32 LODIndex);
+	void ApplyVertexAlphaToSkeletalMesh();
+	void CopySkeletalMeshToProcedural(int32 LODIndex);
+	void SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf);
+
+public:
 	FORCEINLINE ATargetPoint* GetPatrolPoint()
 	{
 		return PatrolPoints.Num() >= (PatrolIndex + 1) ? PatrolPoints[PatrolIndex] : nullptr;
@@ -119,5 +168,16 @@ public:
 
 	void SetCombatEnabled(const bool bEnabled);
 
+	bool IsHaveBlinkAttack() const;
+
+	FORCEINLINE int8 GetCurrentAttackCount() const { return CurrentAttackCount; }
+	FORCEINLINE int8 GetBlinkAttackCount() const { return BlinklAttackCount; }
+	FORCEINLINE int8 GetRepulseAttackCount() const { return RepulseAttackCount; }
+
+	FORCEINLINE bool GetAllowCounterAttack_Blink() { return bAllowCounterAttack_Blink; }
+	FORCEINLINE void SetAllowCounterAttack_Blink(bool isAllow) { bAllowCounterAttack_Blink = isAllow; }
+
+	FORCEINLINE bool GetAllowCounterAttack_Repulse() { return bAllowCounterAttack_Repulse; }
+	FORCEINLINE void SetAllowCounterAttack_Repulse(bool isAllow) { bAllowCounterAttack_Repulse = isAllow; }
 };
 

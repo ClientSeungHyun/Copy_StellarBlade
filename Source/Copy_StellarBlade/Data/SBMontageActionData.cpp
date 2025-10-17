@@ -35,3 +35,11 @@ UAnimMontage* USBMontageActionData::GetRandomMontageForTag(const FGameplayTag& G
 
 	return nullptr;
 }
+
+bool USBMontageActionData::IsHaveMontageForTag(const FGameplayTag& GroupTag) const
+{
+	if (MontageGroupMap.IsEmpty())
+		return false;
+
+	return true;
+}

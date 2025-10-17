@@ -62,6 +62,9 @@ AMonsterCharacter::AMonsterCharacter()
 	CombatComponent = CreateDefaultSubobject<USBCombatComponent>(TEXT("Combat"));
 	RotationComponent = CreateDefaultSubobject<URotationComponent>("RotationComponent");
 
+	ProcMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
+	ProcMeshComponent->SetupAttachment(GetRootComponent());
+
 	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
 }
 
@@ -158,210 +161,36 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 
 void AMonsterCharacter::OnDeath()
 {
-	//if (AAIController* AIController = Cast<AAIController>(GetController()))
-	//{
-	//	AIController->GetBrainComponent()->StopLogic(TEXT("Death"));
-	//	AIController->UnPossess();
-	//}
+	if (isDead)
+		return;
 
-	//if (USkeletalMeshComponent* MeshComp = GetMesh())
-	//{
-	//	if (MeshComp->GetAnimInstance())
-	//	{
-	//		MeshComp->GetAnimInstance()->StopAllMontages(0.f);
-	//		MeshComp->SetAnimInstanceClass(nullptr);
-	//	}
-
-	////	MeshComp->SetCollisionProfileName("Ragdoll");
-	//MeshComp->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	////	MeshComp->SetSimulatePhysics(true);
-	////	MeshComp->WakeAllRigidBodies();
-
-	////	FName BoneName = FName("Bip001-R-Calf");
-	////	FVector BoneLocation = MeshComp->GetBoneTransform(BoneName).GetLocation();
-	////	MeshComp->BreakConstraint(FVector::UpVector * 100.f, BoneLocation, BoneName);
-	////	MeshComp->SetAllBodiesBelowSimulatePhysics(BoneName, true, true);
-	//}
-
-	////SliceMesh(FName("Bip001-Spine"));
-	//SliceMesh(FName("Bip001-L-Calf"));
-	////SliceMesh(FName("Bip001-R-Calf"));
-
-	UProceduralMeshComponent* ProceduralMesh = CreateProceduralMeshFromBone(GetMesh(), FName("Bip001-L-Calf"));
-}
-
-UProceduralMeshComponent* AMonsterCharacter::CreateProceduralMeshFromBone(USkeletalMeshComponent* SkeletalMesh, const FName& BoneName)
-{
-	if (!SkeletalMesh || !SkeletalMesh->GetSkeletalMeshAsset())
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
-		return nullptr;
+		AIController->GetBrainComponent()->StopLogic(TEXT("Death"));
+		AIController->UnPossess();
 	}
 
-	USkeletalMesh* SkeletalMeshAsset = SkeletalMesh->GetSkeletalMeshAsset();
-	const int32 BoneIndex = SkeletalMesh->GetBoneIndex(BoneName);
-
-	if (BoneIndex == INDEX_NONE)
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Bone '%s' not found!"), *BoneName.ToString());
-		return nullptr;
-	}
-
-	// 버텍스 및 트라이앵글 데이터를 수집하기 위한 변수
-	TArray<FVector> Vertices;
-	TArray<FVector> Normals;
-	TArray<FVector2D> UVs;
-	TArray<FLinearColor> VertexColors;
-	TArray<FProcMeshTangent> Tangents;
-
-	// 본에 연결된 버텍스 수집
-	const FSkeletalMeshRenderData* RenderData = SkeletalMeshAsset->GetResourceForRendering();
-	const FSkeletalMeshLODRenderData& LODData = RenderData->LODRenderData[0];
-	const FSkelMeshRenderSection& Section = LODData.RenderSections[0];
-
-	for (uint32 VertexIndex = 0; VertexIndex < Section.NumVertices; ++VertexIndex)
-	{
-		const int32 MappedBoneIndex = LODData.SkinWeightVertexBuffer.GetBoneIndex(VertexIndex, 0);
-
-		if (MappedBoneIndex == BoneIndex)
+		if (MeshComp->GetAnimInstance())
 		{
-			FVector VertexPosition = static_cast<FVector>(LODData.StaticVertexBuffers.PositionVertexBuffer.VertexPosition(VertexIndex));
-			FVector Normal = static_cast<FVector>(LODData.StaticVertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(VertexIndex));
-			FVector2D UV = static_cast<FVector2D>(LODData.StaticVertexBuffers.StaticMeshVertexBuffer.GetVertexUV(VertexIndex, 0));
-
-			Vertices.Add(VertexPosition);
-			Normals.Add(Normal);
-			UVs.Add(UV);
-			Tangents.Add(FProcMeshTangent());
-			VertexColors.Add(FColor(0, 0, 0, 255));
+			MeshComp->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+			MeshComp->GetAnimInstance()->StopAllMontages(0.f);
+			MeshComp->SetAnimInstanceClass(nullptr);
 		}
 	}
 
-	TArray<int32> Triangles;
+	SelectVertices(0);
+	ApplyVertexAlphaToSkeletalMesh();
+	CopySkeletalMeshToProcedural(0);
+	//GetMesh()->SetVisibility(false);
+	FVector SliceNormal = FVector(0, 1, 0);  // Slice in the Z direction
+	SliceMeshAtBone(SliceNormal, true);
 
-	const FRawStaticIndexBuffer16or32Interface* IndexBuffer = LODData.MultiSizeIndexContainer.GetIndexBuffer();
-	// 삼각형 인덱스 데이터 생성 (단순 연결)
-	const int32 NumIndices = IndexBuffer->Num();
+	if(CombatComponent)
+		CombatComponent->SetWeapon(NULL, false);
 
-	//메모리 미리 확보
-	Triangles.SetNumUninitialized(NumIndices);
-	for (int32 i = 0; i < NumIndices; i++)
-	{
-		//IndexBuffer Get(i) - 현재 처리 중인 삼각형을 구성하는 버텍스 인덱스를 가져옴.
-		//결과적으로 Indices를 순환하면 3개씩 묶어서 삼각형을 그릴 수 있다.
-		Triangles[i] = static_cast<int32>(IndexBuffer->Get(i));
-	}
-
-
-	// 프로시저럴 메시 생성
-	UProceduralMeshComponent* ProcMesh = NewObject<UProceduralMeshComponent>(this);
-	ProcMesh->RegisterComponent();
-	ProcMesh->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::KeepWorldTransform);
-
-	ProcMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
-	//ProcMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
-
-		//Convex Collision 추가
-	if (Vertices.Num() > 0)
-	{
-		ProcMesh->ClearCollisionConvexMeshes();  // 기존 Collision 삭제
-		//Convex Collision - 현재 Vertex 기반으로 Convex(볼록한) Collision 생성
-		ProcMesh->AddCollisionConvexMesh(Vertices);  // Convex Collision 추가
-	}
-
-	ProcMesh->SetWorldLocation(GetMesh()->GetComponentLocation());
-	ProcMesh->SetWorldRotation(GetMesh()->GetComponentRotation());
-
-	ProcMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	ProcMesh->SetCollisionObjectType(ECC_WorldDynamic);
-	ProcMesh->SetSimulatePhysics(true);
-	ProcMesh->SetEnableGravity(true);
-
-	UMaterialInterface* SkeletalMeshMaterial = GetMesh()->GetMaterial(0);
-	if (SkeletalMeshMaterial)
-	{
-		ProcMesh->SetMaterial(0, SkeletalMeshMaterial);
-		UE_LOG(LogTemp, Display, TEXT("Applied material from SkeletalMesh to ProceduralMesh."));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SkeletalMesh has no material assigned."));
-	}
-
-	GetMesh()->SetVisibility(false);
-
-	return ProcMesh;
-}
-
-void AMonsterCharacter::SliceMesh(FName BoneName)
-{
-	if (IsLocallyControlled())
-	{
-		GetInstigatorController()->UnPossess();
-	}
-	if (GetMesh())
-	{
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		GetMesh()->SetCollisionProfileName(TEXT("Ragdoll")); // 필요에 따라 충돌 프로필 설정
-	}
-
-	// 1. 본 트랜스폼 가져오기
-	FTransform BoneTransform = GetMesh()->GetBoneTransform(BoneName);
-
-	//// 2. 본에 해당하는 프로시저럴 메시 생성
-	UProceduralMeshComponent* ProceduralMesh = CreateProceduralMeshFromBone(GetMesh(), BoneName);
-	if (!ProceduralMesh) return;
-
-	// 3. SliceProceduralMesh로 절단
-	FVector PlanePosition = BoneTransform.GetLocation();
-	FVector PlaneNormal = FVector::UpVector;
-
-	UProceduralMeshComponent* OtherHalfMesh = nullptr; // 절단 후 다른 절반을 받을 변수
-	UKismetProceduralMeshLibrary::SliceProceduralMesh(
-		ProceduralMesh,
-		PlanePosition,
-		PlaneNormal,
-		true,
-		OtherHalfMesh,
-		EProcMeshSliceCapOption::CreateNewSectionForCap,
-		nullptr
-	);
-
-	// 4. 절단된 메시를 본에 어태치
-	ProceduralMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, BoneName);
-
-	if (OtherHalfMesh)
-	{
-		FName ParentBoneName = GetMesh()->GetParentBone(BoneName);
-		ProceduralMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, BoneName);
-	}
-
-	// 5. 본의 물리 제약 해제
-	ProceduralMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); // 쿼리 및 물리 활성화
-
-	GetMesh()->BreakConstraint(FVector::ZeroVector, FVector::UpVector, BoneName);
-	GetMesh()->SetVisibility(false);
-	ProceduralMesh->SetVisibility(true);
-
-	ProceduralMesh->SetSimulatePhysics(true);
-
-	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); // 쿼리 및 물리 활성화
-
-	GetMesh()->SetSimulatePhysics(true);
-	OtherHalfMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetMesh()->WakeAllRigidBodies();      // 모든 물리 바디 깨우기
-
-	GetMesh()->bBlendPhysics = true;
-
-	GetMesh()->bReplicatePhysicsToAutonomousProxy = true;
-
-
-
-	// 6. 임펄스 적용 (옵션)
-	if (ProceduralMesh)
-	{
-		//ProceduralMesh->AddImpulse(FVector::UpVector * 3000000.0f, BoneName, true);
-	}
+	isDead = true;
 }
 
 void AMonsterCharacter::ImpactEffect(const FVector& Location)
@@ -381,10 +210,13 @@ void AMonsterCharacter::HitReaction(const AActor* Attacker)
 {
 	check(CombatComponent)
 
-	if (UAnimMontage* HitReactAnimMontage = CombatComponent->GetMainWeapon()->GetHitReactMontage(Attacker))
-	{
-		PlayAnimMontage(HitReactAnimMontage);
-	}
+		if (CombatComponent->GetMainWeapon())
+		{
+			if (UAnimMontage* HitReactAnimMontage = CombatComponent->GetMainWeapon()->GetHitReactMontage(Attacker))
+			{
+				PlayAnimMontage(HitReactAnimMontage);
+			}
+		}
 }
 
 void AMonsterCharacter::OnTargeted(bool bTargeted)
@@ -475,6 +307,9 @@ void AMonsterCharacter::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnd
 			{
 				AnimInstance->Montage_Play(Montage);
 				AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, Montage);
+
+				if(Weapon->IsHaveBlinkAttack())
+					++CurrentAttackCount;
 			}
 		}
 	}
@@ -502,6 +337,241 @@ void AMonsterCharacter::ToggleMonsterStateVisibility(bool bVisibility)
 	}
 }
 
+void AMonsterCharacter::SelectVertices(int32 LODIndex)
+{
+	if (!GetMesh() || !ProcMeshComponent) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshComponent or ProcMeshComp is null."));
+		return;
+	}
+
+	USkeletalMesh* SkeletalMesh = GetMesh()->GetSkeletalMeshAsset();
+	if (!SkeletalMesh) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SkeletalMesh is null."));
+		return;
+	}
+
+	//GetResourceForRendering - Skeletal Mesh의 렌더링 데이터를 가져옴
+	const FSkeletalMeshRenderData* RenderData = SkeletalMesh->GetResourceForRendering();
+	if (!RenderData || !RenderData->LODRenderData.IsValidIndex(LODIndex)) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LODRenderData[%d] is not valid."), LODIndex);
+		return;
+	}
+
+	NumVertices = RenderData->LODRenderData[LODIndex].GetNumVertices();
+
+	//SkeletalMesh에서 LODRenderData를 가져온다.LODRenderData는 버텍스 데이터, 인덱스 데이터, 섹션 정보 등이 포함
+	//FSkeletalMeshLODRenderData란 LOD의 Mesh 데이터를 가지고 있는 구조체이다.
+	const FSkeletalMeshLODRenderData& LODRenderData = RenderData->LODRenderData[LODIndex];
+	//SkinWeightVertexBuffer를 가져온다. -> vertex가 어떤 Bone에 영향을 받는지 저장하는 데이터이며 Animation에서 사용 예정
+	const FSkinWeightVertexBuffer& SkinWeights = LODRenderData.SkinWeightVertexBuffer;
+
+	FTransform MeshTransform = GetMesh()->GetComponentTransform();
+	FVector TargetBoneLocation = GetMesh()->GetBoneLocation(TargetBoneName);
+
+	int32 TargetBoneIndex = GetMesh()->GetBoneIndex(TargetBoneName);
+	if (TargetBoneIndex == INDEX_NONE) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Target bone not found: %s"), *TargetBoneName.ToString());
+		return;
+	}
+
+	int32 vertexCounter = 0;
+	for (const FSkelMeshRenderSection& Section : LODRenderData.RenderSections) 
+	{
+		//NumVertices - 해당 Section의 Vertex 수, BaseVertexIndex - 해당 Section의 시작 Vertex Index
+		const int32 NumSourceVertices = Section.NumVertices;
+		const int32 BaseVertexIndex = Section.BaseVertexIndex;
+
+		for (int32 i = 0; i < NumSourceVertices; ++i) 
+		{
+			const int32 VertexIndex = i + BaseVertexIndex;
+
+			//vertex의 위치를 가져온다. -> LODRenderData.StaticVertexBuffers.PositionVertexBuffer(현재 LOD의 Vertex 위치 데이터를 저장하는 버퍼)
+			//.VertexPosition(VertexIndex)-> VertexIndex의 위치를 가져온다. 반환 타입이 FVector3f이다.
+			const FVector3f SkinnedVectorPos = LODRenderData.StaticVertexBuffers.PositionVertexBuffer.VertexPosition(VertexIndex);		//로컬 좌표 반환
+			FVector WorldVertexPos = MeshTransform.TransformPosition(FVector(SkinnedVectorPos)); // FVector3f -> FVector 변환 & 로컬 -> 월드 좌표
+
+			float DistanceToBone = FVector::Dist(WorldVertexPos, TargetBoneLocation);
+			if (DistanceToBone <= CreateProceduralMeshDistance)
+			{
+				// 위치 정보 추가
+				FVector LocalVertexPosition = FVector(SkinnedVectorPos);
+				VertexIndexMap.Add(VertexIndex, vertexCounter);
+				//WorldVertexPosition을 사용하면 다른 위치에 Procedural Mesh가 생성된다.
+				FilteredVerticesArray.Add(LocalVertexPosition);
+				vertexCounter += 1;
+				// 노멀(Normal), 탄젠트(Tangent) 추가
+				const FVector3f Normal = LODRenderData.StaticVertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(VertexIndex);
+				const FVector3f TangentX = LODRenderData.StaticVertexBuffers.StaticMeshVertexBuffer.VertexTangentX(VertexIndex);
+				const FVector2f SourceUVs = LODRenderData.StaticVertexBuffers.StaticMeshVertexBuffer.GetVertexUV(VertexIndex, 0);
+				Normals.Add(FVector(Normal));
+				Tangents.Add(FProcMeshTangent(FVector(TangentX), false));
+				UV.Add(FVector2D(SourceUVs));
+
+				VertexColors.Add(FColor(0, 0, 0, 255));
+			}
+		}
+	}
+
+	//LODRenderData.MultiSizeIndexContainer.GetIndexBuffer()
+	//원래 Skeletal Mesh의 각 vertex가 어떻게 삼각형으로 구성되어있었는지를 들고온다.
+	const FRawStaticIndexBuffer16or32Interface* IndexBuffer = LODRenderData.MultiSizeIndexContainer.GetIndexBuffer();
+	if (!IndexBuffer) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Index buffer is null."));
+		return;
+	}
+
+	//현재 LOD의 총 Index 수를 가져온다.
+	const int32 NumIndices = IndexBuffer->Num();
+	Indices.SetNum(NumIndices);
+
+	for (int32 i = 0; i < NumIndices; i += 3) 
+	{
+		//IndexBuffer Get(i) - 현재 처리 중인 삼각형을 구성하는 버텍스 인덱스를 가져옴.
+		//즉, 첫 BaseVertexIndex에서 그려지는 삼각형부터 순서대로 삼각형이 그려지는 vertex의 Index를 가져온다.
+		int32 OldIndex0 = static_cast<int32>(IndexBuffer->Get(i));
+		int32 OldIndex1 = static_cast<int32>(IndexBuffer->Get(i + 1));
+		int32 OldIndex2 = static_cast<int32>(IndexBuffer->Get(i + 2));
+
+		// 기존 VertexIndex가 NewVertexIndex에 포함된 경우만 추가 - 실제로 내가 vertex 수집한 곳에 있는 Index인지 확인한다.
+		int32 NewIndex0 = VertexIndexMap.Contains(OldIndex0) ? VertexIndexMap[OldIndex0] : -1;
+		int32 NewIndex1 = VertexIndexMap.Contains(OldIndex1) ? VertexIndexMap[OldIndex1] : -1;
+		int32 NewIndex2 = VertexIndexMap.Contains(OldIndex2) ? VertexIndexMap[OldIndex2] : -1;
+
+		//NewIndex >= FilteredVerticesArray.Num() - VertexIndexMap이 잘못된 값을 반환하거나, Indices 배열에 유효하지 않은 인덱스가 추가될 때 발생
+		if (!(NewIndex0 < 0 || NewIndex0 >= FilteredVerticesArray.Num()
+			|| NewIndex1 < 0 || NewIndex1 >= FilteredVerticesArray.Num()
+			|| NewIndex2 < 0 || NewIndex2 >= FilteredVerticesArray.Num()))
+		{
+			Indices.Add(NewIndex0);
+			Indices.Add(NewIndex1);
+			Indices.Add(NewIndex2);
+		}
+	}
+
+	// for (int32 i = 0; i < FilteredVerticesArray.Num(); i++) {
+	// 	// 잘린 부분의 버텍스를 Black(0, 0, 0)으로 설정
+	// 	VertexColors.Add(FColor(0, 0, 0, 0));  // 알파 값 포함
+	// }
+}
+
+void AMonsterCharacter::ApplyVertexAlphaToSkeletalMesh()
+{
+	if (!GetMesh() || !GetMesh()->GetSkeletalMeshAsset()) 
+		return;
+
+	TArray<FLinearColor> LinearVertexColors;
+	LinearVertexColors.Init(FLinearColor(1, 1, 1, 1), NumVertices);
+
+	// VertexIndexMap을 활용해 잘린 부분만 색상을 변경
+	for (const TPair<int32, int32>& Pair : VertexIndexMap) 
+	{
+		int32 ColorChangeIndex = Pair.Key;  // 원본 Skeletal Mesh의 버텍스 인덱스
+		if (ColorChangeIndex >= 0) 
+		{
+			LinearVertexColors[ColorChangeIndex] = FLinearColor(0, 0, 0, 0);
+		}
+	}
+
+	// Skeletal Mesh에 버텍스 컬러 적용
+	GetMesh()->SetVertexColorOverride_LinearColor(0, LinearVertexColors);
+	GetMesh()->MarkRenderStateDirty();
+}
+
+void AMonsterCharacter::CopySkeletalMeshToProcedural(int32 LODIndex)
+{
+	if (!GetMesh() || !ProcMeshComponent) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshComponent or ProcMeshComp is null."));
+		return;
+	}
+
+	FVector MeshLocation = GetMesh()->GetComponentLocation();
+	FRotator MeshRotation = GetMesh()->GetComponentRotation();
+
+	ProcMeshComponent->SetWorldLocation(MeshLocation);
+	ProcMeshComponent->SetWorldRotation(MeshRotation);
+
+	//CreateMeshSection(int32 SectionIndex, const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector>& Normals, const TArray<FVector2D>& UV0, const TArray<FColor>& VertexColors, const TArray<FProcMeshTangent>& Tangents, bool bCreateCollision)
+	//Section Index - 어떤 Section부터 시작하는가?, Vertices - 어떤 vertex를 사용하는가?
+	//Indices - 어떤 삼각형 구조를 사용하는가?, Normals, UV, Colors, Tangents, bCreateCollision - 충돌 활성화
+	ProcMeshComponent->CreateMeshSection(0, FilteredVerticesArray, Indices, Normals, UV, VertexColors, Tangents, true);
+
+	UMaterialInterface* SkeletalMeshMaterial = GetMesh()->GetMaterial(0);
+	if (SkeletalMeshMaterial) {
+		ProcMeshComponent->SetMaterial(0, SkeletalMeshMaterial);
+		//UE_LOG(LogTemp, Display, TEXT("Applied material from SkeletalMesh to ProceduralMesh."));
+	}
+	else UE_LOG(LogTemp, Warning, TEXT("SkeletalMesh has no material assigned."));
+}
+
+void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
+{
+	if (!GetMesh() || !ProcMeshComponent) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshComponent or ProcMeshComponent is null."));
+		return;
+	}
+
+	FVector BoneLocation = GetMesh()->GetBoneLocation(TargetBoneName);
+	if (BoneLocation == FVector::ZeroVector) 
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to get Bone '%s' location. Check if the bone exists in the skeleton."), *TargetBoneName.ToString());
+		return;
+	}
+
+	UMaterialInterface* ProcMeshMaterial = ProcMeshComponent->GetMaterial(0);
+	if (!ProcMeshMaterial) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Procedural mesh has no material assigned."));
+	}
+
+	//잘린 Procedural Mesh가 OtherHalfMesh가 된다.
+	UProceduralMeshComponent* OtherHalfMesh = nullptr;		
+	UKismetProceduralMeshLibrary::SliceProceduralMesh(
+		ProcMeshComponent,
+		BoneLocation,
+		SliceNormal,
+		bCreateOtherHalf,
+		OtherHalfMesh,
+		EProcMeshSliceCapOption::CreateNewSectionForCap,
+		CapMaterial                           //절단면 Material
+	);
+
+	if (!OtherHalfMesh) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to slice mesh at bone '%s'."), *TargetBoneName.ToString());
+		return;
+	}
+	if (ProceduralMeshAttachSocketName.IsNone() || OtherHalfMeshAttachSocketName.IsNone()) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("One or both Socket Names are invalid!"));
+		return;
+	}
+
+	ProcMeshComponent->SetSimulatePhysics(false);
+	OtherHalfMesh->SetSimulatePhysics(false);
+	UE_LOG(LogTemp, Display, TEXT("Physic Disable"));
+
+	//Procedural Mesh를 특정 Socket에 Attach
+	//FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
+	//ProcMeshComponent->AttachToComponent(GetMesh(), TransformRules, ProceduralMeshAttachSocketName);
+	//OtherHalfMesh->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
+
+	//Ragdoll 적용 & Bone 자름.
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->BreakConstraint(FVector(1000.f, 1000.f, 1000.f), FVector::ZeroVector, TargetBoneName);
+	GetMesh()->SetSimulatePhysics(true);
+
+	//Procedural Mesh에 물리 적용
+	//ProcMeshComponent->SetSimulatePhysics(true); //-> true 시 따로 움직인다.
+	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+}
+
 ASBWeapon* AMonsterCharacter::GetMainWeapon()
 {
 	return CombatComponent->GetMainWeapon();
@@ -516,3 +586,9 @@ void AMonsterCharacter::SetCombatEnabled(const bool bEnabled)
 {
 	CombatComponent->SetCombatEnabled(true);
 }
+
+bool AMonsterCharacter::IsHaveBlinkAttack() const
+{
+	return CombatComponent->GetMainWeapon()->IsHaveBlinkAttack();
+}
+
