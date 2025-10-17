@@ -142,6 +142,7 @@ private:
 	bool isJumping = false;
 	bool isAttacking = false;
 	bool isGuarding = false;
+	bool isPerfectGuarded = false;
 
 	bool isPressed_W = false;
 	bool isPressed_A = false;
@@ -171,14 +172,15 @@ public:
 	virtual void OnDeath();
 
 public:
-	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; };
-	USBEveAtrributeComponent* GetAttributeComponent()  { return AttributeComponent; };
+	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; }
+	USBEveAtrributeComponent* GetAttributeComponent()  { return AttributeComponent; }
 
 	void EnableComboWindow();
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
 
 	bool GetIsGuarding() { return isGuarding; }
+	bool GetIsPerfectGuarded() { return isPerfectGuarded; }
 	ASBEveWeapon* GetWeapon() { return Sword; }
 
 	UCharacterMovementComponent* MovementComp = nullptr;

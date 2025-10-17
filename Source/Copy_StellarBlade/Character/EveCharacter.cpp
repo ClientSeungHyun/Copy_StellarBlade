@@ -358,6 +358,7 @@ void AEveCharacter::StartGuard()
 {
 	isGuarding = true;
 	GuardStartTime = GetWorld()->GetTimeSeconds();
+	isPerfectGuarded = false;
 }
 
 void AEveCharacter::EndGuard()
@@ -368,6 +369,7 @@ void AEveCharacter::EndGuard()
 void AEveCharacter::PerfectGuard()
 {
 	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+	isPerfectGuarded = true;
 	AttributeComponent->AddBetaEnergy();
 }
 
