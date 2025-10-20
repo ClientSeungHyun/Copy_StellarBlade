@@ -334,6 +334,17 @@ void AEveCharacter::Dodge()
 	}
 	else
 	{
+		if (TargetingComponent->IsLockOn())
+		{
+			if (isPressed_A)
+			{
+				PlayAnimMontage(DodgeAnimLeft);
+			}
+			else if (isPressed_D)
+			{
+				PlayAnimMontage(DodgeAnimRight);
+			}
+		}
 		PlayAnimMontage(DodgeAnimBack);
 	}
 }

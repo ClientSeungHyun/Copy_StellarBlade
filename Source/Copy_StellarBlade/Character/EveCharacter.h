@@ -122,6 +122,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
 	UAnimMontage* DodgeAnimBack;
 
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimLeft;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimRight;
+
 protected: //Combo System
 	//콤보 작동 중인지
 	bool bComboSequenceRunning = false;
