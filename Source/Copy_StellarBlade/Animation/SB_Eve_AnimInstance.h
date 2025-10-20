@@ -44,8 +44,26 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	float Direction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	bool bIsGuarding;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	bool bIsLockOn;
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Key Input Data")
+	bool bPressing_W;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Key Input Data")
+	bool bPressing_A;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Key Input Data")
+	bool bPressing_S;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Key Input Data")
+	bool bPressing_D;
+
+
 
 private:
 	USBStateComponent* PlayerStateComp = nullptr;

@@ -57,6 +57,12 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     //UE_LOG(LogTemp, Warning, TEXT("bIsRunning: %d"), bIsRunning);
    // UE_LOG(LogTemp, Warning, TEXT("bIsJumpingStart: %d"), bIsJumpingStart);
 
+    bPressing_W = Player->GetPressed_W();
+    bPressing_A = Player->GetPressed_A();
+    bPressing_S = Player->GetPressed_S();
+    bPressing_D = Player->GetPressed_D();
+    bIsLockOn = Player->IsLockOn();
+
     if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_JumpStart)
     {
         bIsJumpingStart = true;

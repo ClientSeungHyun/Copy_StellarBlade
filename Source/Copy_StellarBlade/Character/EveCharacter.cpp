@@ -82,6 +82,8 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	CheckLanded();
 
+	isLockOn = TargetingComponent->IsLockOn();
+
 	//if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
 	//{
 	//	UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
@@ -392,6 +394,7 @@ void AEveCharacter::CheckLanded()
 void AEveCharacter::LockOnTarget()
 {
 	TargetingComponent->ToggleLockOn();
+	GetCharacterMovement()->bOrientRotationToMovement = !TargetingComponent->IsLockOn();
 }
 
 void AEveCharacter::NormalAttack()

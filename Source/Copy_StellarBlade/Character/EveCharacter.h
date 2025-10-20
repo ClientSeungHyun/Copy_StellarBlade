@@ -92,7 +92,7 @@ protected:
 
 	/** °È´Â ¼Óµµ */
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
-	float SlowSpeed = 200.f;
+	float SlowSpeed = 150.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASBEveWeapon> SwordClass;
@@ -149,6 +149,8 @@ private:
 	bool isPressed_S = false;
 	bool isPressed_D = false;
 
+	bool isLockOn = false;
+
 	float ShiftPressedTime = 0.0f;
 	float GuardStartTime = 0.0f;
 
@@ -181,6 +183,14 @@ public:
 
 	bool GetIsGuarding() { return isGuarding; }
 	bool GetIsPerfectGuarded() { return isPerfectGuarded; }
+
+	bool GetPressed_W() { return isPressed_W; }
+	bool GetPressed_A() { return isPressed_A; }
+	bool GetPressed_S() { return isPressed_S; }
+	bool GetPressed_D() { return isPressed_D; }
+
+	bool IsLockOn() { return isLockOn; }
+
 	ASBEveWeapon* GetWeapon() { return Sword; }
 
 	UCharacterMovementComponent* MovementComp = nullptr;
