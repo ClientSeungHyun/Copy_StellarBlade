@@ -70,7 +70,7 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         bIsSprinting = false;
     }
 
-    if (GroundSpeed < 1.f && bIsFalling == false)
+    if (GroundSpeed < 10.f && bIsFalling == false)
     {
         if(IsAnyMontagePlaying() == false)
             PlayerStateComp->SetState(SBEveTags::Eve_State_Idle);

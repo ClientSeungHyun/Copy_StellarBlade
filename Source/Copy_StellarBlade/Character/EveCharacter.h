@@ -154,14 +154,16 @@ private:
 	bool isPressed_A = false;
 	bool isPressed_S = false;
 	bool isPressed_D = false;
+	bool bPressShift = false;
 
 	bool isLockOn = false;
 
+	float PressShiftTime = 0.0f;
 	float ShiftPressedTime = 0.0f;
 	float GuardStartTime = 0.0f;
 
 	FGameplayTag lastAttackTag;
-
+	UAnimMontage* CurrentPlaying_AM = nullptr;
 public:
 	AEveCharacter();
 
@@ -220,6 +222,7 @@ protected:
 
 	void Running();
 	void StopRunning();
+	void StartDodge();
 	void Dodge();
 
 	void Idle();
@@ -245,5 +248,7 @@ protected:
 
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
+
+
 
 };
