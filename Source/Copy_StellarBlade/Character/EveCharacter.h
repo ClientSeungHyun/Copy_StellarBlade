@@ -161,9 +161,11 @@ private:
 	float PressShiftTime = 0.0f;
 	float ShiftPressedTime = 0.0f;
 	float GuardStartTime = 0.0f;
+	float BlinkMoveBackDistance = 10.0f;
 
 	FGameplayTag lastAttackTag;
 	UAnimMontage* CurrentPlaying_AM = nullptr;
+
 public:
 	AEveCharacter();
 
@@ -222,7 +224,7 @@ protected:
 
 	void Running();
 	void StopRunning();
-	void StartDodge();
+	void Pressed_Shift();
 	void Dodge();
 
 	void Idle();
@@ -240,6 +242,7 @@ protected:
 
 	void NormalAttack();
 	void SkillAttack();
+	void BlinkAttack();
 
 	bool CanPerformAttack();
 	void ResetCombo();
@@ -249,6 +252,6 @@ protected:
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
 
-
+	void TeleportBehindTarget(AActor* TargetActor, float DistanceBehind);
 
 };

@@ -18,6 +18,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/DamageEvents.h"
+#include "Monster/MonsterCharacter.h"
 
 AEveCharacter::AEveCharacter()
 {
@@ -101,12 +102,7 @@ void AEveCharacter::Tick(float DeltaTime)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
 		//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
-	}
-
-	//if (!Sword)
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
-	
+	}	
 }
 
 void AEveCharacter::NotifyControllerChanged()
@@ -134,7 +130,7 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::StartGuard);
 		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::EndGuard);
 
-		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Started, this, &ThisClass::StartDodge);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Started, this, &ThisClass::Pressed_Shift);
 		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
 
 		EnhancedInputComponent->BindAction(MoveAction_F, ETriggerEvent::Triggered, this, &ThisClass::Pressed_W);
@@ -221,6 +217,7 @@ void AEveCharacter::Move(const FInputActionValue& Values)
 
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
+	CheckTags.AddTag(SBEveTags::Eve_State_Attacking);
 
 	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false && isJumping == false)
 	{
@@ -436,6 +433,14 @@ void AEveCharacter::SkillAttack()
 	ExecuteComboAttack(SBEveTags::Eve_Attack_SkillAttack);
 }
 
+void AEveCharacter::BlinkAttack()
+{
+	if (CanPerformAttack() == false)
+		return;
+
+	ExecuteComboAttack(SBEveTags::Eve_Attack_BlinkAttack);
+}
+
 void AEveCharacter::EnableComboWindow()
 {
 	bCanComboInput = true;
@@ -505,10 +510,8 @@ void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
 
 void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 {
-	static int32 test = 0;
 	if (isAttacking == false)
 	{
-		test++;
 		StateComponent->SetState(SBEveTags::Eve_State_Attacking);
 		//UE_LOG(LogTemp, Warning, TEXT(">>> ComboSequence Started <<<"));
 		ResetCombo();
@@ -601,8 +604,45 @@ UAnimMontage* AEveCharacter::GetHitReactAnimation(const AActor* Attacker) const
 	return SelectedMontage;
 }
 
-void AEveCharacter::StartDodge()
+void AEveCharacter::TeleportBehindTarget(AActor* TargetActor, float DistanceBehind)
 {
+	if (!TargetActor) return;
+
+	// 타깃의 위치와 방향 가져오기
+	FVector TargetLocation = TargetActor->GetActorLocation();
+	FRotator TargetRotation = TargetActor->GetActorRotation();
+	FVector TargetForward = TargetActor->GetActorForwardVector();
+
+	// 타깃 뒤쪽 위치 계산
+	FVector TeleportLocation = TargetLocation - (TargetForward * DistanceBehind);
+
+	// 현재 캐릭터 높이 보정 (지면보다 아래로 순간이동 방지)
+	TeleportLocation.Z = GetActorLocation().Z;
+
+	// 회전 방향: 타깃을 바라보게 설정 (선택 사항)
+	FRotator NewRotation = (TargetLocation - TeleportLocation).Rotation();
+
+	// 순간이동 실행
+	SetActorLocationAndRotation(TeleportLocation, NewRotation, false, nullptr, ETeleportType::TeleportPhysics);
+
+	//UE_LOG(LogTemp, Warning, TEXT("상대 뒤 %.1fcm 위치로 순간이동!"), DistanceBehind);
+}
+
+void AEveCharacter::Pressed_Shift()
+{
+	if (isLockOn)
+	{
+		AActor* targetActor = TargetingComponent->GetLockedTargetActor();
+		AMonsterCharacter* targetMonster = Cast<AMonsterCharacter>(targetActor);
+
+		if (targetMonster->GetAllowCounterAttack_Blink())
+		{
+			BlinkAttack();
+			TeleportBehindTarget(targetActor, BlinkMoveBackDistance);
+			return;
+		}
+	}
+
 	bPressShift = true;
 	PressShiftTime = GetWorld()->GetTimeSeconds();
 }

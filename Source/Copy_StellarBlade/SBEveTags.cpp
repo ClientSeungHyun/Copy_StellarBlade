@@ -17,4 +17,5 @@ namespace SBEveTags
 
 	UE_DEFINE_GAMEPLAY_TAG(Eve_Attack_NormalAttack, "Eve.Attack.NormalAttack");
 	UE_DEFINE_GAMEPLAY_TAG(Eve_Attack_SkillAttack, "Eve.Attack.SkillAttack");
+	UE_DEFINE_GAMEPLAY_TAG(Eve_Attack_BlinkAttack, "Eve.Attack.BlinkAttack");
 }
