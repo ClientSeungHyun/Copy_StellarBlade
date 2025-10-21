@@ -243,6 +243,7 @@ protected:
 	void NormalAttack();
 	void SkillAttack();
 	void BlinkAttack();
+	void RepulseAttack();
 
 	bool CanPerformAttack();
 	void ResetCombo();

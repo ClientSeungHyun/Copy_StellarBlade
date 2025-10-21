@@ -441,6 +441,11 @@ void AEveCharacter::BlinkAttack()
 	ExecuteComboAttack(SBEveTags::Eve_Attack_BlinkAttack);
 }
 
+void AEveCharacter::RepulseAttack()
+{
+	ExecuteComboAttack(SBEveTags::Eve_Attack_RepulseAttack);
+}
+
 void AEveCharacter::EnableComboWindow()
 {
 	bCanComboInput = true;
@@ -635,10 +640,15 @@ void AEveCharacter::Pressed_Shift()
 		AActor* targetActor = TargetingComponent->GetLockedTargetActor();
 		AMonsterCharacter* targetMonster = Cast<AMonsterCharacter>(targetActor);
 
-		if (targetMonster->GetAllowCounterAttack_Blink())
+		if (targetMonster->GetAllowCounterAttack_Blink() && isPressed_W)
 		{
 			BlinkAttack();
 			TeleportBehindTarget(targetActor, BlinkMoveBackDistance);
+			return;
+		}
+		else if (targetMonster->GetAllowCounterAttack_Repulse() && isPressed_S)
+		{
+			RepulseAttack();
 			return;
 		}
 	}

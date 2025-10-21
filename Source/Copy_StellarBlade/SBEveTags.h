@@ -19,5 +19,6 @@ namespace SBEveTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_Attack_NormalAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_Attack_SkillAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_Attack_BlinkAttack);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Eve_Attack_RepulseAttack);
 }
 
