@@ -85,16 +85,21 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	isLockOn = TargetingComponent->IsLockOn();
 
-	if (bPressShift)
+	if (isPressShift)
 	{
-		float CurrentPressTime = GetWorld()->GetTimeSeconds() - PressShiftTime;
+		float CurrentPressTime = FMath::Clamp(GetWorld()->GetTimeSeconds() - PressShiftTime,0.0f,1.0f);
 		//UE_LOG(LogTemp, Warning, TEXT("Press Time : %.2f"), CurrentPressTime);
 
+		if (CurrentPressTime < 0.2f)
+		{
+			bCanPerfectDodge = true;
+		}
 		if (CurrentPressTime < 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Dodge)
 		{
+			bCanPerfectDodge = false;
 			Dodge();
 		}
-		else if(CurrentPressTime > 0.50f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Running)
+		else if(CurrentPressTime > 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Running)
 			Running();
 	}
 
@@ -157,8 +162,18 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	float HitTime = GetWorld()->GetTimeSeconds();
 
+	if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_PerfectDodge)
+		return 0.f;
+
+	if (bCanPerfectDodge && HitTime - DodgeStartTime <= 0.2f)
+	{
+		PerfectDodge();
+		return 0.f;
+	}
+
+	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 
 	if (AttributeComponent)
 	{
@@ -223,7 +238,7 @@ void AEveCharacter::Move(const FInputActionValue& Values)
 	{
 		FVector2D MovementVector = Values.Get<FVector2D>();
 
-		if(bPressShift == false)
+		if(isPressShift == false)
 			StateComponent->SetState(SBEveTags::Eve_State_Walking);
 
 		if (isGuarding)
@@ -321,16 +336,22 @@ void AEveCharacter::Running()
 			StateComponent->SetState(SBEveTags::Eve_State_Running);
 		}
 	}
+	else	
+	{
+		StateComponent->SetState(SBEveTags::Eve_State_Running);
+	}
 }
 
 void AEveCharacter::StopRunning()
 {
-	bPressShift = false;
+	isPressShift = false;
 }
 
 void AEveCharacter::Dodge()
 {
 	StateComponent->SetState(SBEveTags::Eve_State_Dodge);
+
+	DodgeStartTime = GetWorld()->GetTimeSeconds();
 
 	if (isPressed_W)
 	{
@@ -392,6 +413,30 @@ void AEveCharacter::PerfectGuard()
 	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
 	isPerfectGuarded = true;
 	AttributeComponent->AddBetaEnergy();
+}
+
+void AEveCharacter::PerfectDodge()
+{
+	StateComponent->SetState(SBEveTags::Eve_State_PerfectDodge);
+
+	if (TargetingComponent->IsLockOn())
+	{
+		if (isPressed_A)
+		{
+			PlayAnimMontage(PerfectDodgeAnim_Left);
+			CurrentPlaying_AM = PerfectDodgeAnim_Left;
+		}
+		else if (isPressed_D)
+		{
+			PlayAnimMontage(PerfectDodgeAnim_Right);
+			CurrentPlaying_AM = PerfectDodgeAnim_Right;
+		}
+	}
+	else
+	{
+		PlayAnimMontage(PerfectDodgeAnim_Back);
+		CurrentPlaying_AM = PerfectDodgeAnim_Back;
+	}
 }
 
 void AEveCharacter::CheckLanded()
@@ -539,7 +584,7 @@ void AEveCharacter::HitReaction(const AActor* Attacker)
 	float HitTime = GetWorld()->GetTimeSeconds();
 
 	//퍼팩트 패링(가드)
-	if (HitTime - GuardStartTime <= 0.2f)
+	if (isGuarding && HitTime - GuardStartTime <= 0.2f)
 	{
 		PerfectGuard();
 		return;
@@ -653,7 +698,7 @@ void AEveCharacter::Pressed_Shift()
 		}
 	}
 
-	bPressShift = true;
+	isPressShift = true;
 	PressShiftTime = GetWorld()->GetTimeSeconds();
 }
 

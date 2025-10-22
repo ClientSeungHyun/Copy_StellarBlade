@@ -126,7 +126,16 @@ protected:
 	UAnimMontage* DodgeAnimLeft;
 
 	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
-	UAnimMontage* DodgeAnimRight;
+	UAnimMontage* DodgeAnimRight;	
+	
+	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
+	UAnimMontage* PerfectDodgeAnim_Back;		
+
+	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
+	UAnimMontage* PerfectDodgeAnim_Left;	
+	
+	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
+	UAnimMontage* PerfectDodgeAnim_Right;
 
 protected: //Combo System
 	//콤보 작동 중인지
@@ -154,13 +163,15 @@ private:
 	bool isPressed_A = false;
 	bool isPressed_S = false;
 	bool isPressed_D = false;
-	bool bPressShift = false;
+	bool isPressShift = false;
 
 	bool isLockOn = false;
+	bool bCanPerfectDodge= false;
 
 	float PressShiftTime = 0.0f;
 	float ShiftPressedTime = 0.0f;
 	float GuardStartTime = 0.0f;
+	float DodgeStartTime = 0.0f;
 	float BlinkMoveBackDistance = 10.0f;
 
 	FGameplayTag lastAttackTag;
@@ -232,6 +243,7 @@ protected:
 	void StartGuard();
 	void EndGuard();
 	void PerfectGuard();
+	void PerfectDodge();
 
 	void CheckLanded();
 

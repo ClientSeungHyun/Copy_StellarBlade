@@ -13,6 +13,7 @@ namespace SBEveTags
 	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Attacking, "Eve.State.Attacking");
 	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Death, "Eve.State.Death");
 	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Dodge, "Eve.State.Dodge");
+	UE_DEFINE_GAMEPLAY_TAG(Eve_State_PerfectDodge, "Eve.State.PerfectDodge");
 	UE_DEFINE_GAMEPLAY_TAG(Eve_State_Hit, "Eve.State.Hit");
 
 	UE_DEFINE_GAMEPLAY_TAG(Eve_Attack_NormalAttack, "Eve.Attack.NormalAttack");
