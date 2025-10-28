@@ -27,10 +27,10 @@ public:
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Health")
-	float BaseHealth = 100.f;
+	float BaseHealth = 200;
 
 	UPROPERTY(EditAnywhere, Category = "Health")
-	float MaxHealth = 100.f;
+	float MaxHealth = 200;
 
 	UPROPERTY(EditAnywhere, Category = "Health")
 	float CurrentBetaEnergy = 0.f;

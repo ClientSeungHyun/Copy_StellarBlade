@@ -13,6 +13,7 @@ class USBEveAtrributeComponent;
 class USB_Eve_AnimInstance;
 class ASBEveWeapon;
 class UTargetingComponent;
+class UEveHUD;
 
 UCLASS()
 class COPY_STELLARBLADE_API AEveCharacter : public ACharacter
@@ -80,6 +81,13 @@ private:
 	/** LockedOn Targeting */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UTargetingComponent* TargetingComponent;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> EveHUDClass;
+
+	UPROPERTY(VisibleAnywhere);
+	UEveHUD* Eve_HUD;
 
 protected:
 	/** 질주 속도 */

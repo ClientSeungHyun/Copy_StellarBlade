@@ -19,6 +19,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/DamageEvents.h"
 #include "Monster/MonsterCharacter.h"
+#include "UI/PlayerUI/EveHUD.h"
 
 AEveCharacter::AEveCharacter()
 {
@@ -62,7 +63,16 @@ AEveCharacter::AEveCharacter()
 void AEveCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (EveHUDClass)
+	{
+		Eve_HUD = CreateWidget<UEveHUD>(GetWorld(), EveHUDClass);
+		if (Eve_HUD)
+		{
+			Eve_HUD->AddToViewport();
+		}
+	}
+
 	if (SwordClass && !Sword)
 	{
 		Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
