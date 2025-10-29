@@ -422,7 +422,7 @@ void AEveCharacter::PerfectGuard()
 {
 	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
 	isPerfectGuarded = true;
-	AttributeComponent->AddBetaEnergy();
+	AttributeComponent->AddBetaEnergy(10.f);
 }
 
 void AEveCharacter::PerfectDodge()
@@ -481,10 +481,10 @@ void AEveCharacter::NormalAttack()
 
 void AEveCharacter::SkillAttack()
 {
-	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergyRatio() < 1.0f)
+	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergy() < 40.f)
 		return;
 
-	AttributeComponent->ResetBetaEnergy();
+	AttributeComponent->DecreaseBetaEnergy();
 	ExecuteComboAttack(SBEveTags::Eve_Attack_SkillAttack);
 }
 

@@ -13,6 +13,7 @@ enum class EAttributeType : uint8
     Health,
     Shield,
     Stamina,
+    BetaEnergy,
 };
 
 UENUM(BlueprintType)

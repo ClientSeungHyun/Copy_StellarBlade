@@ -6,6 +6,9 @@
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Components/Image.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/Overlay.h"
 #include "Blueprint/WidgetTree.h"
 
 UEveHUD::UEveHUD(const FObjectInitializer& ObjectInitializer)
@@ -26,9 +29,6 @@ void UEveHUD::NativeConstruct()
 		}
 	}
 
-
-	if (!HPGrid || !HPEmptyTexture || !HPFillTexture) return;
-
 	HPGrid->ClearChildren();
 
 	int32 TotalBlocks = NumColumns * NumRows;
@@ -47,6 +47,45 @@ void UEveHUD::NativeConstruct()
 			GridSlot->SetVerticalAlignment(VAlign_Fill);
 		}
 	}
+
+	BE_HorizontalBox->ClearChildren();  // 혹시 있을 기존 내용 제거
+
+	for (int32 BoxIndex = 0; BoxIndex < 5; ++BoxIndex)
+	{
+		// 각 세트를 감쌀 Overlay 생성
+		UOverlay* Overlay = WidgetTree->ConstructWidget<UOverlay>(UOverlay::StaticClass());
+
+		TArray<UImage*> LocalImages;
+
+		// 4개의 이미지를 Overlay에 겹쳐서 추가
+		for (int32 i = 0; i < BE_Textures.Num(); ++i)
+		{
+			UImage* Img = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+			Img->SetBrushFromTexture(BE_Textures[i]);
+			Img->SetColorAndOpacity(FLinearColor(0.2f, 0.2f, 0.2f, 1.0f));
+
+			// Overlay에 추가
+			Overlay->AddChild(Img);
+			LocalImages.Add(Img);
+		}
+
+		// 완성된 Overlay를 HorizontalBox에 추가
+		//BE_HorizontalBox->AddChild(Overlay);
+		UHorizontalBoxSlot* BoxSlot = Cast<UHorizontalBoxSlot>(BE_HorizontalBox->AddChild(Overlay));
+		if (BoxSlot)
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 0.f, 10.0f, 0.0f)); // 좌우 픽셀 간격
+			BoxSlot->SetHorizontalAlignment(HAlign_Center);
+			BoxSlot->SetVerticalAlignment(VAlign_Center);
+		}
+
+		// 나중에 색상 업데이트할 때 접근할 수 있도록 배열에 저장
+		BE_OverlayList.Add(Overlay);
+
+		FBEOverlaySet Set;
+		Set.Images = LocalImages;
+		BE_OverlayImages.Add(Set);
+	}
 }
 
 void UEveHUD::OnAttributeChanged(EAttributeType AttributeType, float InValue)
@@ -55,6 +94,9 @@ void UEveHUD::OnAttributeChanged(EAttributeType AttributeType, float InValue)
 	{
 	case EAttributeType::Health:
 		UpdateHP(InValue);
+		break;
+	case EAttributeType::BetaEnergy:
+		UpdateBeta(InValue);
 		break;
 	}
 }
@@ -80,6 +122,45 @@ void UEveHUD::UpdateHP(float Ratio)
 					: FLinearColor(0.2f, 0.2f, 0.2f, 1.0f);
 				Block->SetColorAndOpacity(Color);
 			}
+		}
+	}
+}
+
+void UEveHUD::UpdateBeta(float BetaValue)
+{
+	int32 bigSquare = BetaValue / 20;
+	int32 smallSquare = static_cast<int32>(BetaValue) % 20 ;
+	
+	for (int32 i = 0; i < 5; ++i)
+	{
+		for (int32 j = 0; j < 4; ++j)
+		{
+			bool FillColor = false;
+
+			if (i < bigSquare)
+			{
+				FillColor = true;
+			}
+			else if (i == bigSquare)
+			{
+				if (smallSquare > 0)
+				{
+					if (smallSquare / 5 > j)
+					{
+						FillColor = true;
+					}
+				}
+			}
+			
+			if(FillColor)
+			{
+				BE_OverlayImages[i].Images[j]->SetColorAndOpacity(FLinearColor(0.665f, 0.963f, 1.0f, 1.0f));
+			}
+			else
+			{
+				BE_OverlayImages[i].Images[j]->SetColorAndOpacity(FLinearColor(0.2f, 0.2f, 0.2f, 1.0f));
+			}
+
 		}
 	}
 }

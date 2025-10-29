@@ -38,6 +38,9 @@ void USBEveAtrributeComponent::BroadcastAttributeChanged(EAttributeType InAttrib
 		case EAttributeType::Health:
 			Ratio = GetHealthRatio();
 			break;
+		case EAttributeType::BetaEnergy:
+			Ratio = CurrentBetaEnergy;
+			break;
 		}
 
 		OnAttributeChanged.Broadcast(InAttributeType, Ratio);
@@ -76,6 +79,14 @@ void USBEveAtrributeComponent::AddBetaEnergy(float num)
 {
 	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy + num, 0.0f, 100.0f);
 
-	UE_LOG(LogTemp, Warning, TEXT("BetaEnergy : %f"), CurrentBetaEnergy);
+	BroadcastAttributeChanged(EAttributeType::BetaEnergy);
+
+	//UE_LOG(LogTemp, Warning, TEXT("BetaEnergy : %f"), CurrentBetaEnergy);
+}
+
+void USBEveAtrributeComponent::DecreaseBetaEnergy()
+{
+	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy - 40.f, 0.0f, 100.0f);
+	BroadcastAttributeChanged(EAttributeType::BetaEnergy);
 }
 

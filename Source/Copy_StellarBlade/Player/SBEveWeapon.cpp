@@ -65,7 +65,7 @@ float ASBEveWeapon::GetAttackDamage()
 			{
 				Owner = Cast<AEveCharacter>(GetOwner());
 			}
-			Owner->GetAttributeComponent()->AddBetaEnergy();
+			Owner->GetAttributeComponent()->AddBetaEnergy(3.f);
 			
 			return BaseDamage * Multiplier;
 		}

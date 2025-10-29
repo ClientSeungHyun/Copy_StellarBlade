@@ -60,7 +60,7 @@ public:
 	void BroadcastAttributeChanged(EAttributeType InAttributeType) const;
 	void TakeDamageAmount(float DamageAmount);
 	
-	float GetBetaEnergyRatio() const { return CurrentBetaEnergy / MaxBetaEnergy; };
-	void AddBetaEnergy(float num = 20);
-	void ResetBetaEnergy() { CurrentBetaEnergy = 0.f; };
+	float GetBetaEnergy() const { return CurrentBetaEnergy; };
+	void AddBetaEnergy(float num = 10);
+	void DecreaseBetaEnergy();
 };

@@ -7,7 +7,16 @@
 #include "Blueprint/UserWidget.h"
 #include "EveHUD.generated.h"
 
-class UEveHpBar;
+class UImage;
+
+USTRUCT()
+struct FBEOverlaySet
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<UImage*> Images;
+};
 
 UCLASS()
 class COPY_STELLARBLADE_API UEveHUD : public UUserWidget
@@ -17,21 +26,31 @@ class COPY_STELLARBLADE_API UEveHUD : public UUserWidget
 protected:
 	//////////////////////////////////////
 	UPROPERTY(meta = (BindWidget))
+	class UHorizontalBox* BE_HorizontalBox;
+	
+	UPROPERTY(meta = (BindWidget))
 	class UUniformGridPanel* HPGrid;
+
+	UPROPERTY(meta = (BindWidget))
+	class UOverlay* BE_Overlay; 
 
 	UPROPERTY(EditAnywhere, Category = "HP")
 	int32 NumColumns = 20;
 
 	UPROPERTY(EditAnywhere, Category = "HP")
 	int32 NumRows = 3;
-
-	UPROPERTY(EditAnywhere, Category = "HP")
-	UTexture2D* HPEmptyTexture;	
 	
 	UPROPERTY(EditAnywhere, Category = "HP")
 	UTexture2D* HPFillTexture;
 
-	void UpdateHP(float Ratio);
+	UPROPERTY(EditAnywhere, Category = "Beta")
+	TArray<class UTexture2D*> BE_Textures; // 총 4개 이미지 텍스처
+
+	UPROPERTY()
+	TArray<UOverlay*> BE_OverlayList;
+
+	UPROPERTY()
+	TArray<FBEOverlaySet> BE_OverlayImages;
 
 public:
 	UEveHUD(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
@@ -41,4 +60,8 @@ public:
 
 protected:
 	void OnAttributeChanged(EAttributeType AttributeType, float InValue);
+
+	void UpdateHP(float Ratio);
+
+	void UpdateBeta(float BetaValue);
 };
