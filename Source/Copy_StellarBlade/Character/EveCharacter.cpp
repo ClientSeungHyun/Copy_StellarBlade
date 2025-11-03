@@ -82,6 +82,11 @@ void AEveCharacter::BeginPlay()
 		Sword->SetOwner(this);
 		Sword->EquipItem();
 	}
+
+
+	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
+	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_PerfectDodge);
+	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Running);
 }
 
 FVector PreviousRootLocation;
@@ -95,6 +100,19 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	isLockOn = TargetingComponent->IsLockOn();
 
+
+	if (isLockOn)
+	{
+		if (StateComponent->IsCurrentStateEqualToAny(FreePlayerMovementAtLockon_CheckTags))
+		{
+			GetCharacterMovement()->bOrientRotationToMovement = true;
+		}
+		else
+		{
+			GetCharacterMovement()->bOrientRotationToMovement = false;
+		}
+	}
+
 	if (isPressShift)
 	{
 		float CurrentPressTime = FMath::Clamp(GetWorld()->GetTimeSeconds() - PressShiftTime,0.0f,1.0f);
@@ -104,13 +122,15 @@ void AEveCharacter::Tick(float DeltaTime)
 		{
 			bCanPerfectDodge = true;
 		}
-		if (CurrentPressTime < 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Dodge)
+		if (CurrentPressTime < 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Dodge && StateComponent->GetCurrentState() != SBEveTags::Eve_State_PerfectDodge)
 		{
 			bCanPerfectDodge = false;
 			Dodge();
 		}
 		else if(CurrentPressTime > 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Running)
+		{
 			Running();
+		}
 	}
 
 	if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
@@ -177,7 +197,7 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 	if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_PerfectDodge)
 		return 0.f;
 
-	if (bCanPerfectDodge && HitTime - DodgeStartTime <= 0.2f)
+	if (bCanPerfectDodge && HitTime - DodgeStartTime <= PerfectDodgeTime)
 	{
 		PerfectDodge();
 		return 0.f;
@@ -242,6 +262,7 @@ void AEveCharacter::Move(const FInputActionValue& Values)
 
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
+	CheckTags.AddTag(SBEveTags::Eve_State_PerfectDodge);
 	CheckTags.AddTag(SBEveTags::Eve_State_Attacking);
 
 	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false && isJumping == false)
@@ -333,6 +354,7 @@ void AEveCharacter::Unpress_D()
 
 void AEveCharacter::Running()
 {
+	//닷지 후 달리기 시 몽타주가 완전히 끝나지 않아도 상태 전환
 	if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_Dodge)
 	{
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -363,28 +385,41 @@ void AEveCharacter::Dodge()
 
 	DodgeStartTime = GetWorld()->GetTimeSeconds();
 
-	if (isPressed_W)
+	if (TargetingComponent->IsLockOn() == false)
 	{
-		PlayAnimMontage(DodgeAnimFront);
-		CurrentPlaying_AM = DodgeAnimFront;
+		if (isPressed_W)
+		{
+			PlayAnimMontage(DodgeAnimFront);
+			CurrentPlaying_AM = DodgeAnimFront;
+		}
+		else
+		{
+			PlayAnimMontage(DodgeAnimBack);
+			CurrentPlaying_AM = DodgeAnimBack;
+		}
 	}
 	else
 	{
-		if (TargetingComponent->IsLockOn())
+		if (isPressed_A)
 		{
-			if (isPressed_A)
-			{
-				PlayAnimMontage(DodgeAnimLeft);
-				CurrentPlaying_AM = DodgeAnimLeft;
-			}
-			else if (isPressed_D)
-			{
-				PlayAnimMontage(DodgeAnimRight);
-				CurrentPlaying_AM = DodgeAnimRight;
-			}
+			PlayAnimMontage(DodgeAnimLeft);
+			CurrentPlaying_AM = DodgeAnimLeft;
 		}
-		PlayAnimMontage(DodgeAnimBack);
-		CurrentPlaying_AM = DodgeAnimBack;
+		else if (isPressed_D)
+		{
+			PlayAnimMontage(DodgeAnimRight);
+			CurrentPlaying_AM = DodgeAnimRight;
+		}
+		else if (isPressed_W)
+		{
+			PlayAnimMontage(DodgeAnimFront);
+			CurrentPlaying_AM = DodgeAnimFront;
+		}
+		else
+		{
+			PlayAnimMontage(DodgeAnimBack);
+			CurrentPlaying_AM = DodgeAnimBack;
+		}
 	}
 }
 
@@ -440,6 +475,11 @@ void AEveCharacter::PerfectDodge()
 		{
 			PlayAnimMontage(PerfectDodgeAnim_Right);
 			CurrentPlaying_AM = PerfectDodgeAnim_Right;
+		}
+		else
+		{
+			PlayAnimMontage(PerfectDodgeAnim_Back);
+			CurrentPlaying_AM = PerfectDodgeAnim_Back;
 		}
 	}
 	else
@@ -594,7 +634,7 @@ void AEveCharacter::HitReaction(const AActor* Attacker)
 	float HitTime = GetWorld()->GetTimeSeconds();
 
 	//퍼팩트 패링(가드)
-	if (isGuarding && HitTime - GuardStartTime <= 0.2f)
+	if (isGuarding && HitTime - GuardStartTime <= PerfectGuardTime)
 	{
 		PerfectGuard();
 		return;
