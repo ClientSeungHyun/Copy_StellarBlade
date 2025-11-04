@@ -63,6 +63,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* Guard_Action;
 
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* Use_Potion_Action;
+
 	/** LockedOn */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LockOnTargetAction;
@@ -254,6 +257,7 @@ protected:
 	void EndGuard();
 	void PerfectGuard();
 	void PerfectDodge();
+	void UsePotion();
 
 	void CheckLanded();
 

@@ -178,9 +178,9 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(MoveAction_R, ETriggerEvent::Completed, this, &ThisClass::Unpress_D);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
 
-		//어색하면 Cancle사용
 		EnhancedInputComponent->BindAction(Normal_AttackAction, ETriggerEvent::Started, this, &ThisClass::NormalAttack);
 		EnhancedInputComponent->BindAction(Skill_AttackAction, ETriggerEvent::Started, this, &ThisClass::SkillAttack);
+		EnhancedInputComponent->BindAction(Use_Potion_Action, ETriggerEvent::Started, this, &ThisClass::UsePotion);
 		
 		// LockedOn
 		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Started, this, &ThisClass::LockOnTarget);
@@ -487,6 +487,14 @@ void AEveCharacter::PerfectDodge()
 		PlayAnimMontage(PerfectDodgeAnim_Back);
 		CurrentPlaying_AM = PerfectDodgeAnim_Back;
 	}
+}
+
+void AEveCharacter::UsePotion()
+{
+	if (AttributeComponent->GetHealthRatio() >= 1.f || AttributeComponent->GetCurrentPotionCount() == 0)
+		return;
+
+	AttributeComponent->UsePotion();
 }
 
 void AEveCharacter::CheckLanded()
