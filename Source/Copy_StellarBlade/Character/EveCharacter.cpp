@@ -494,6 +494,8 @@ void AEveCharacter::UsePotion()
 	if (AttributeComponent->GetHealthRatio() >= 1.f || AttributeComponent->GetCurrentPotionCount() == 0)
 		return;
 
+	PlayAnimMontage(PotionAnim);
+	bUsePotion = true;
 	AttributeComponent->UsePotion();
 }
 

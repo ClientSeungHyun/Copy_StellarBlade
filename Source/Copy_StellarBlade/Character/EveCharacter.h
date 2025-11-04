@@ -148,6 +148,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
 	UAnimMontage* PerfectDodgeAnim_Right;
 
+	UPROPERTY(EditAnywhere, Category = "Montage | Potion")
+	UAnimMontage* PotionAnim;
+
 protected: //Combo System
 	//콤보 작동 중인지
 	bool bComboSequenceRunning = false;
@@ -190,6 +193,10 @@ private:
 	FGameplayTag lastAttackTag;
 	UAnimMontage* CurrentPlaying_AM = nullptr;
 	FGameplayTagContainer FreePlayerMovementAtLockon_CheckTags;
+
+public:
+	bool bUsePotion = false;
+
 public:
 	AEveCharacter();
 

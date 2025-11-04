@@ -1,8 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
-#include "Components/SBEveAtrributeComponent.h"
 #include "UI/PlayerUI/EvePotionUI.h"
+#include "Components/SBEveAtrributeComponent.h"
 #include "Components/VerticalBox.h"
 #include "Components/Image.h"
 #include "Components/VerticalBoxSlot.h"
