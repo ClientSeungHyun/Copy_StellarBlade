@@ -45,6 +45,7 @@ protected:
 
 private:
 	float PotionHealAmount = 20.f;
+	float SkillUseBetaEnergyAmout = 40.f;
 
 private:
 	AEveCharacter* OwnerCharacter = nullptr;

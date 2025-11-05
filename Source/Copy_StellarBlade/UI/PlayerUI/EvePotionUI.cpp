@@ -15,7 +15,7 @@ UEvePotionUI::UEvePotionUI(const FObjectInitializer& ObjectInitializer)
 
 void UEvePotionUI::NativeConstruct()
 {
-	//Super::NativeConstruct();
+	Super::NativeConstruct();
 
     if (APawn* OwningPawn = GetOwningPlayerPawn())
     {

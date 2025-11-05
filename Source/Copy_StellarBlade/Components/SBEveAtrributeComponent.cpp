@@ -98,7 +98,7 @@ void USBEveAtrributeComponent::UsePotion()
 
 void USBEveAtrributeComponent::DecreaseBetaEnergy()
 {
-	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy - 40.f, 0.0f, 100.0f);
+	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy - SkillUseBetaEnergyAmout, 0.0f, 100.0f);
 	BroadcastAttributeChanged(EAttributeType::BetaEnergy);
 }
 
