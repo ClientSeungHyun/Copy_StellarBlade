@@ -46,6 +46,9 @@ protected:
 	TArray<FColor> VertexColors;
 	TArray<FColor> Colors;
 
+	FRotator ProcMeshRotation;
+	FRotator OtherHalfRotation;
+
 public:
 	// Sets default values for this character's properties
 	ATestCharacter();
@@ -67,6 +70,8 @@ public:
 	void ApplyVertexAlphaToSkeletalMesh();
 	void CopySkeletalMeshToProcedural(int32 LODIndex);
 	void SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf);
+
+	FVector GetAverageVertexPosition(const TArray<FVector>& Vertices);
 
 	//void CreateProceduralMesh();
 

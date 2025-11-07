@@ -163,7 +163,10 @@ void AMonsterAIController::OnBattleStartMontageEnded(UAnimMontage* Montage, bool
 {
 	if (Monster)
 	{
-		ControlledEnemy->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-		Monster->SetCombatEnabled(true);
+		if (ControlledEnemy)
+		{
+			ControlledEnemy->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			Monster->SetCombatEnabled(true);
+		}
 	}
 }

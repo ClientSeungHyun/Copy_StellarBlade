@@ -27,7 +27,7 @@ class COPY_STELLARBLADE_API AMonsterCharacter : public ACharacter, public ITarge
 	GENERATED_BODY()
 
 protected:
-	bool isDead = false;
+	bool bIsDead = false;
 
 	int8 CurrentAttackCount = 0;
 
