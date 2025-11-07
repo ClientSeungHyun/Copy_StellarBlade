@@ -45,23 +45,29 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     bIsFalling = MovementComponent->IsFalling();
 
-   /* if (GroundSpeed > 500.f && bIsFalling == false){
-        bIsRunning = false;
-        bIsSprinting = true;
-    }
-     else if(GroundSpeed > 1.f && bIsFalling == false)
-    {
-        bIsRunning = true;  
-    }*/
+    /* if (GroundSpeed > 500.f && bIsFalling == false){
+         bIsRunning = false;
+         bIsSprinting = true;
+     }
+      else if(GroundSpeed > 1.f && bIsFalling == false)
+     {
+         bIsRunning = true;
+     }*/
 
-    //UE_LOG(LogTemp, Warning, TEXT("bIsRunning: %d"), bIsRunning);
-   // UE_LOG(LogTemp, Warning, TEXT("bIsJumpingStart: %d"), bIsJumpingStart);
+     //UE_LOG(LogTemp, Warning, TEXT("bIsRunning: %d"), bIsRunning);
+    // UE_LOG(LogTemp, Warning, TEXT("bIsJumpingStart: %d"), bIsJumpingStart);
 
     bPressing_W = Player->GetPressed_W();
     bPressing_A = Player->GetPressed_A();
     bPressing_S = Player->GetPressed_S();
     bPressing_D = Player->GetPressed_D();
     bIsLockOn = Player->IsLockOn();
+
+    if (IsAnyMontagePlaying() == false && bUsePotion)
+    {
+        bUsePotion = false;
+        Cast<AEveCharacter>(GetOwningActor())->bUsePotion = false;
+    }
 
     if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_JumpStart)
     {
@@ -72,23 +78,23 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     if (GroundSpeed < 1.f && bIsFalling == false)
     {
-        if(IsAnyMontagePlaying() == false)
+        if (IsAnyMontagePlaying() == false)
             PlayerStateComp->SetState(SBEveTags::Eve_State_Idle);
     }
 
-    if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Running){
+    if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Running) {
         bIsRunning = false;
         bIsSprinting = true;
         bIsJumpingStart = false;
     }
 
-    if(PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Walking)
+    if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Walking)
     {
         bIsRunning = true;
         bIsSprinting = false;
         bIsJumpingStart = false;
     }
- 
+
     if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Idle)
     {
         bIsJumpingStart = false;
@@ -96,6 +102,10 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         bIsSprinting = false;
     }
 
+    if (Cast<AEveCharacter>(GetOwningActor())->bUsePotion && bUsePotion == false)
+    {
+        bUsePotion = true;
+    }
 
     bIsGuarding = Player->GetIsGuarding();
     

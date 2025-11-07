@@ -41,6 +41,9 @@ void USBEveAtrributeComponent::BroadcastAttributeChanged(EAttributeType InAttrib
 		case EAttributeType::BetaEnergy:
 			Ratio = CurrentBetaEnergy;
 			break;
+		case EAttributeType::Potion:
+			Ratio = CurrentPotionCount;
+			break;
 		}
 
 		OnAttributeChanged.Broadcast(InAttributeType, Ratio);
@@ -84,9 +87,18 @@ void USBEveAtrributeComponent::AddBetaEnergy(float num)
 	//UE_LOG(LogTemp, Warning, TEXT("BetaEnergy : %f"), CurrentBetaEnergy);
 }
 
+void USBEveAtrributeComponent::UsePotion()
+{
+	BaseHealth = FMath::Clamp(BaseHealth + PotionHealAmount, 0.f, MaxHealth);
+	CurrentPotionCount--;
+
+	BroadcastAttributeChanged(EAttributeType::Health);
+	BroadcastAttributeChanged(EAttributeType::Potion);
+}
+
 void USBEveAtrributeComponent::DecreaseBetaEnergy()
 {
-	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy - 40.f, 0.0f, 100.0f);
+	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy - SkillUseBetaEnergyAmout, 0.0f, 100.0f);
 	BroadcastAttributeChanged(EAttributeType::BetaEnergy);
 }
 

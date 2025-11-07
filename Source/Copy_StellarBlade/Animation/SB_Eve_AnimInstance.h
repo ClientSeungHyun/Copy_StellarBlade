@@ -50,6 +50,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement Data")
 	bool bIsLockOn;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement Data")
+	bool bUsePotion;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Key Input Data")
 	bool bPressing_W;

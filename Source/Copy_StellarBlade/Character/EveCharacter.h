@@ -63,6 +63,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* Guard_Action;
 
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* Use_Potion_Action;
+
 	/** LockedOn */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LockOnTargetAction;
@@ -145,6 +148,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
 	UAnimMontage* PerfectDodgeAnim_Right;
 
+	UPROPERTY(EditAnywhere, Category = "Montage | Potion")
+	UAnimMontage* PotionAnim;
+
 protected: //Combo System
 	//콤보 작동 중인지
 	bool bComboSequenceRunning = false;
@@ -181,9 +187,15 @@ private:
 	float GuardStartTime = 0.0f;
 	float DodgeStartTime = 0.0f;
 	float BlinkMoveBackDistance = 10.0f;
+	float PerfectGuardTime = 0.2f;
+	float PerfectDodgeTime = 0.2f;
 
 	FGameplayTag lastAttackTag;
 	UAnimMontage* CurrentPlaying_AM = nullptr;
+	FGameplayTagContainer FreePlayerMovementAtLockon_CheckTags;
+
+public:
+	bool bUsePotion = false;
 
 public:
 	AEveCharacter();
@@ -252,6 +264,7 @@ protected:
 	void EndGuard();
 	void PerfectGuard();
 	void PerfectDodge();
+	void UsePotion();
 
 	void CheckLanded();
 
