@@ -57,74 +57,14 @@ void ATestCharacter::Tick(float DeltaTime)
 #if UE_BUILD_DEVELOPMENT
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
 
-
-	static float debugoffsetPosX = 0.f;
-	if (PC && PC->WasInputKeyJustPressed(EKeys::NumPadOne))
-	{
-
-		// 디버그용 코드 실행 (예: 메쉬 보정)
-		FVector Center = GetAverageVertexPosition(FilteredVerticesArray);
-		FVector ProcWorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(Center);
-		FVector ProcSocketWorld = GetMesh()->GetSocketLocation(ProceduralMeshAttachSocketName);
-
-		FVector dd = ProcSocketWorld - ProcWorldCenter;
-		ProcMeshComponent->AddWorldOffset(ProcSocketWorld - ProcWorldCenter);
-
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			// 메시 중심 (파란색)
-			DrawDebugSphere(World, ProcWorldCenter, 5.f, 12, FColor::Blue, false, 5.f);
-
-			// 소켓 위치 (빨간색)
-			DrawDebugSphere(World, ProcSocketWorld, 5.f, 12, FColor::Red, false, 5.f);
-
-			// 두 점을 연결하는 선 (노란색)
-			DrawDebugLine(World, ProcWorldCenter, ProcSocketWorld, FColor::Yellow, false, 5.f, 0, 1.0f);
-		}
-	}
-
-	float Step = 1.f; // 한 번 누를 때 회전 변경 정도 (도 단위)
-	static FRotator DebugOffsetRot = FRotator::ZeroRotator;
-
-	// X축 (Pitch)
-	if (PC->WasInputKeyJustPressed(EKeys::NumPadThree))
-	{
-		DebugOffsetRot.Pitch += Step;
-	}
 	if (PC->WasInputKeyJustPressed(EKeys::NumPadFour))
 	{
-		DebugOffsetRot.Pitch -= Step;
-	}
+		FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
+		FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
 
-	// Y축 (Yaw)
-	if (PC->WasInputKeyJustPressed(EKeys::NumPadFive))
-	{
-		DebugOffsetRot.Yaw += Step;
+		ProcMeshComponent->AddLocalRotation(ProcMeshRotation);
+		//OtherHalfMesh->AddLocalRotation(OtherHalfRotation);
 	}
-	if (PC->WasInputKeyJustPressed(EKeys::NumPadSix))
-	{
-		DebugOffsetRot.Yaw -= Step;
-	}
-
-	// Z축 (Roll)
-	if (PC->WasInputKeyJustPressed(EKeys::NumPadSeven))
-	{
-		DebugOffsetRot.Roll += Step;
-	}
-	if (PC->WasInputKeyJustPressed(EKeys::NumPadEight))
-	{
-		DebugOffsetRot.Roll -= Step;
-	}
-
-	// 회전 적용
-	if (DebugOffsetRot != FRotator::ZeroRotator)
-	{
-		ProcMeshComponent->SetRelativeRotation(DebugOffsetRot);
-		UE_LOG(LogTemp, Log, TEXT("Debug Rot Offset -> Pitch: %.2f, Yaw: %.2f, Roll: %.2f"),
-			DebugOffsetRot.Pitch, DebugOffsetRot.Yaw, DebugOffsetRot.Roll);
-	}
-	
 #endif
 }
 
@@ -355,36 +295,31 @@ void ATestCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
 
 
 	// Attach with SnapToTarget
-	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
-	ProcMeshComponent->AttachToComponent(GetMesh(), AttachRules, ProceduralMeshAttachSocketName);
-	OtherHalfMesh->AttachToComponent(GetMesh(), AttachRules, OtherHalfMeshAttachSocketName);
+	//FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+	//ProcMeshComponent->AttachToComponent(GetMesh(), AttachRules, ProceduralMeshAttachSocketName);
+	//OtherHalfMesh->AttachToComponent(GetMesh(), AttachRules, OtherHalfMeshAttachSocketName);
 
-
-	OtherHalfMesh->AddLocalRotation(OtherHalfRotation);
-
-	// 위치 오프셋 보정 (중심 → 소켓)
-	FVector Center = GetAverageVertexPosition(FilteredVerticesArray);
-	FVector ProcWorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(Center);
-	FVector ProcSocketWorld = GetMesh()->GetSocketLocation(ProceduralMeshAttachSocketName);
-	//ProcMeshComponent->AddWorldOffset(ProcSocketWorld - ProcWorldCenter);
-
-	//FProcMeshSection* OtherSection = OtherHalfMesh->GetProcMeshSection(0);
-	//TArray<FVector> OtherVertices;
-	//for (const FProcMeshVertex& V : OtherSection->ProcVertexBuffer)
-	//	OtherVertices.Add(V.Position);
-
-	//FVector OtherCenter = GetAverageVertexPosition(OtherVertices);
-	//FVector OtherWorldCenter = OtherHalfMesh->GetComponentTransform().TransformPosition(OtherCenter);
-	//FVector OtherSocketWorld = GetMesh()->GetSocketLocation(OtherHalfMeshAttachSocketName);
-	//OtherHalfMesh->AddWorldOffset(OtherSocketWorld - OtherWorldCenter);
+	FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
+	FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
 
 
 
+	ProcMeshComponent->SetRelativeRotation(ProcSocketRot);
+	OtherHalfMesh->SetRelativeRotation(OtherSocketRot);
+	ProcMeshComponent->AddLocalRotation(FRotator(0.f, 0.f, 180.f));
+
+	FTransform SocketTransform = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_World);
+	FVector LocalCenter = GetAverageVertexPosition(FilteredVerticesArray);
+
+	FVector WorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(LocalCenter);
+	FVector Offset = SocketTransform.GetLocation() - WorldCenter;
+
+	ProcMeshComponent->SetWorldLocation(SocketTransform.GetLocation() + Offset);
 
 	//Ragdoll 적용 & Bone 자름.
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->BreakConstraint(FVector(1000.f, 1000.f, 1000.f), FVector::ZeroVector, TargetBoneName);
-	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->BreakConstraint(FVector(0.f, 0.f, 0.f), FVector::ZeroVector, TargetBoneName);
+	GetMesh()->SetSimulatePhysics(false);
 
 	//Procedural Mesh에 물리 적용
 	//ProcMeshComponent->SetSimulatePhysics(true); //-> true 시 따로 움직인다.
