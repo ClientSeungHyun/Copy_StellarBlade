@@ -122,6 +122,7 @@ void AEveCharacter::Tick(float DeltaTime)
 		{
 			bCanPerfectDodge = true;
 		}
+
 		if (CurrentPressTime < 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Dodge && StateComponent->GetCurrentState() != SBEveTags::Eve_State_PerfectDodge)
 		{
 			bCanPerfectDodge = false;
@@ -133,11 +134,11 @@ void AEveCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
-		//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
-	}	
+	//if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
+	//	//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
+	//}	
 }
 
 void AEveCharacter::NotifyControllerChanged()
@@ -745,13 +746,13 @@ void AEveCharacter::Pressed_Shift()
 		AActor* targetActor = TargetingComponent->GetLockedTargetActor();
 		AMonsterCharacter* targetMonster = Cast<AMonsterCharacter>(targetActor);
 
-		if (targetMonster->GetAllowCounterAttack_Blink() && isPressed_W)
+		if (targetMonster->GetAllowCounterAttack_Blink())// && isPressed_W)
 		{
 			BlinkAttack();
 			TeleportBehindTarget(targetActor, BlinkMoveBackDistance);
 			return;
 		}
-		else if (targetMonster->GetAllowCounterAttack_Repulse() && isPressed_S)
+		else if (targetMonster->GetAllowCounterAttack_Repulse())// && isPressed_S)
 		{
 			RepulseAttack();
 			return;
