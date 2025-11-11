@@ -186,7 +186,7 @@ private:
 	float ShiftPressedTime = 0.0f;
 	float GuardStartTime = 0.0f;
 	float DodgeStartTime = 0.0f;
-	float BlinkMoveBackDistance = 10.0f;
+	float BlinkMoveBackDistance = 80.0f;
 	float PerfectGuardTime = 0.2f;
 	float PerfectDodgeTime = 0.2f;
 
