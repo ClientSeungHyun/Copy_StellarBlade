@@ -209,6 +209,7 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 	if (AttributeComponent)
 	{
 		AttributeComponent->TakeDamageAmount(ActualDamage);
+		PlayShakeCamera();
 		HitReaction(this);
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
@@ -640,6 +641,14 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 	}
 }
 
+void AEveCharacter::PlayShakeCamera()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return;
+
+	PC->PlayerCameraManager->StartCameraShake(ShakeCamera, 1.0f);
+}
+
 void AEveCharacter::HitReaction(const AActor* Attacker)
 {
 	float HitTime = GetWorld()->GetTimeSeconds();
@@ -648,6 +657,10 @@ void AEveCharacter::HitReaction(const AActor* Attacker)
 	if (isGuarding && HitTime - GuardStartTime <= PerfectGuardTime)
 	{
 		PerfectGuard();
+		return;
+	}
+	else if(isGuarding)
+	{
 		return;
 	}
 

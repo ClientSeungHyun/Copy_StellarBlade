@@ -107,6 +107,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASBEveWeapon> SwordClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	TSubclassOf<UCameraShakeBase> ShakeCamera;
 
 	UPROPERTY()
 	ASBEveWeapon* Sword;
@@ -282,6 +285,8 @@ protected:
 	void ResetCombo();
 	void DoAttack(const FGameplayTag& AttackTypeTag);
 	void ExecuteComboAttack(const FGameplayTag& AttackTypeTag);
+
+	void PlayShakeCamera();
 
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
