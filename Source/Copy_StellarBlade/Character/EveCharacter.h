@@ -13,6 +13,7 @@ class USBEveAtrributeComponent;
 class USB_Eve_AnimInstance;
 class ASBEveWeapon;
 class UTargetingComponent;
+class UEveHUD;
 
 UCLASS()
 class COPY_STELLARBLADE_API AEveCharacter : public ACharacter
@@ -33,13 +34,22 @@ private:
 	class UInputMappingContext* DefaultMappingContext;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MoveAction;
+	class UInputAction* MoveAction_F;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MoveAction_B;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MoveAction_L;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MoveAction_R;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* RunAction;
+	class UInputAction* RunDodgeAction;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* JumpAction;
@@ -52,6 +62,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* Guard_Action;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* Use_Potion_Action;
 
 	/** LockedOn */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -73,6 +86,13 @@ private:
 	UTargetingComponent* TargetingComponent;
 
 protected:
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> EveHUDClass;
+
+	UPROPERTY(VisibleAnywhere);
+	UEveHUD* Eve_HUD;
+
+protected:
 	/** 질주 속도 */
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float SprintingSpeed = 600.f;
@@ -83,13 +103,16 @@ protected:
 
 	/** 걷는 속도 */
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
-	float SlowSpeed = 200.f;
+	float SlowSpeed = 150.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASBEveWeapon> SwordClass;
 
 	UPROPERTY()
 	ASBEveWeapon* Sword;
+
+	UPROPERTY(EditAnywhere, Category = "Run/Dodge")
+	float DodgeThreshold = 0.25f; // 0.25초 이하로 누르면 회피
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
@@ -103,6 +126,30 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimRight;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimFront;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimBack;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimLeft;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Dodge")
+	UAnimMontage* DodgeAnimRight;	
+	
+	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
+	UAnimMontage* PerfectDodgeAnim_Back;		
+
+	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
+	UAnimMontage* PerfectDodgeAnim_Left;	
+	
+	UPROPERTY(EditAnywhere, Category = "Montage | PerfectDodge")
+	UAnimMontage* PerfectDodgeAnim_Right;
+
+	UPROPERTY(EditAnywhere, Category = "Montage | Potion")
+	UAnimMontage* PotionAnim;
 
 protected: //Combo System
 	//콤보 작동 중인지
@@ -124,8 +171,31 @@ private:
 	bool isJumping = false;
 	bool isAttacking = false;
 	bool isGuarding = false;
+	bool isPerfectGuarded = false;
+
+	bool isPressed_W = false;
+	bool isPressed_A = false;
+	bool isPressed_S = false;
+	bool isPressed_D = false;
+	bool isPressShift = false;
+
+	bool isLockOn = false;
+	bool bCanPerfectDodge= false;
+
+	float PressShiftTime = 0.0f;
+	float ShiftPressedTime = 0.0f;
+	float GuardStartTime = 0.0f;
+	float DodgeStartTime = 0.0f;
+	float BlinkMoveBackDistance = 10.0f;
+	float PerfectGuardTime = 0.2f;
+	float PerfectDodgeTime = 0.2f;
 
 	FGameplayTag lastAttackTag;
+	UAnimMontage* CurrentPlaying_AM = nullptr;
+	FGameplayTagContainer FreePlayerMovementAtLockon_CheckTags;
+
+public:
+	bool bUsePotion = false;
 
 public:
 	AEveCharacter();
@@ -145,14 +215,23 @@ public:
 	virtual void OnDeath();
 
 public:
-	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; };
+	FORCEINLINE USBStateComponent* GetStateComponent() const { return StateComponent; }
+	USBEveAtrributeComponent* GetAttributeComponent()  { return AttributeComponent; }
 
 	void EnableComboWindow();
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
 
-
 	bool GetIsGuarding() { return isGuarding; }
+	bool GetIsPerfectGuarded() { return isPerfectGuarded; }
+
+	bool GetPressed_W() { return isPressed_W; }
+	bool GetPressed_A() { return isPressed_A; }
+	bool GetPressed_S() { return isPressed_S; }
+	bool GetPressed_D() { return isPressed_D; }
+
+	bool IsLockOn() { return isLockOn; }
+
 	ASBEveWeapon* GetWeapon() { return Sword; }
 
 	UCharacterMovementComponent* MovementComp = nullptr;
@@ -164,15 +243,29 @@ protected:
 protected:
 	void Move(const struct FInputActionValue& Values);
 	void Look(const struct FInputActionValue& Values);
-	/** 질주 */
+
+	void Pressed_W(const struct FInputActionValue& Values);
+	void Pressed_A(const struct FInputActionValue& Values);
+	void Pressed_S(const struct FInputActionValue& Values);
+	void Pressed_D(const struct FInputActionValue& Values);
+	void Unpress_W();
+	void Unpress_A();
+	void Unpress_S();
+	void Unpress_D();
+
 	void Running();
-	/** 질주 중단 */
 	void StopRunning();
+	void Pressed_Shift();
+	void Dodge();
 
 	void Idle();
 	void NewJump();
-	void IsGuard();
-	void IsNotGuard();
+	void StartGuard();
+	void EndGuard();
+	void PerfectGuard();
+	void PerfectDodge();
+	void UsePotion();
+
 	void CheckLanded();
 
 	/** LockedOn */
@@ -182,6 +275,8 @@ protected:
 
 	void NormalAttack();
 	void SkillAttack();
+	void BlinkAttack();
+	void RepulseAttack();
 
 	bool CanPerformAttack();
 	void ResetCombo();
@@ -190,4 +285,7 @@ protected:
 
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
+
+	void TeleportBehindTarget(AActor* TargetActor, float DistanceBehind);
+
 };

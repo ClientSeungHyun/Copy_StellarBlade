@@ -32,7 +32,7 @@ public:
 public:
 	virtual void EquipItem(bool isSubWeapon = false);
 
-	virtual void UnequipItem();
+	virtual void UnequipItem(bool isSubWeapon = false);
 
 	virtual void AttachToOwner(FName SocketName);
 

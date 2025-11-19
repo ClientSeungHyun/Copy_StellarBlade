@@ -19,7 +19,8 @@ public class Copy_StellarBlade : ModuleRules
 			"EnhancedInput",
             "GamePlayTags",
             "AnimGraphRuntime",
-            "Json"
+            "Json",
+            "ProceduralMeshComponent"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

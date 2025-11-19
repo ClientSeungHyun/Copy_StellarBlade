@@ -39,8 +39,12 @@ void AMonsterAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!ControlledEnemy)
+		return;
+
 	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
-	if (!Blackboard) return;
+	if (!Blackboard)
+		return;
 	
 	AActor* TargetActor = Cast<AActor>(Blackboard->GetValueAsObject(FName("Target")));
 	if (TargetActor)
@@ -76,12 +80,12 @@ void AMonsterAIController::UpdateTarget()
 	if (OutActors.Contains(PlayerCharacter))
 	{
 		SetTarget(PlayerCharacter);
-		ControlledEnemy->ToggleHealthBarVisibility(true);
+		ControlledEnemy->ToggleMonsterStateVisibility(true);
 	}
 	else
 	{
 		SetTarget(nullptr);
-		ControlledEnemy->ToggleHealthBarVisibility(false);
+		ControlledEnemy->ToggleMonsterStateVisibility(false);
 	}
 
 }
@@ -159,7 +163,10 @@ void AMonsterAIController::OnBattleStartMontageEnded(UAnimMontage* Montage, bool
 {
 	if (Monster)
 	{
-		ControlledEnemy->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-		Monster->SetCombatEnabled(true);
+		if (ControlledEnemy)
+		{
+			ControlledEnemy->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			Monster->SetCombatEnabled(true);
+		}
 	}
 }

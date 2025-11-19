@@ -61,6 +61,8 @@ public:
 	/** LockOn 상태 */
 	FORCEINLINE bool IsLockOn() const { return bIsLockOn; }
 
+	AActor* GetLockedTargetActor() { return LockedTargetActor; }
+
 protected:
 	/** LockOn 시킬 후보군을 찾습니다. */
 	void FindTargets(OUT TArray<AActor*>& OutTargetingActors) const;

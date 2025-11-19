@@ -8,6 +8,7 @@
 #include "SBEveWeapon.generated.h"
 
 class USBWeaponCollisionComponent;
+class AEveCharacter;
 struct FGameplayTag;
 
 UCLASS()
@@ -40,6 +41,7 @@ protected:
 
 private:
 	FGameplayTag lastAttackTag;
+	AEveCharacter* Owner = nullptr;
 
 protected:
 	virtual void BeginPlay() override;
@@ -55,7 +57,7 @@ public:
 	UAnimMontage* GetMontageForTag(const FGameplayTag& Tag, const int32 Index = 0) const;
 	FORCEINLINE USBWeaponCollisionComponent* GetCollision(int32 CollisionNum) const { return WeaponCollision; };
 
-	float GetAttackDamage() const;
+	float GetAttackDamage() ;
 
 	virtual void ActivateCollision();
 	virtual void DeactivateCollision();

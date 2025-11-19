@@ -8,6 +8,8 @@
 #include "MonsterStatBarWidget.generated.h"
 
 class UMonsterHealthBarWidget;
+class UMonsterShieldGageWidget;
+class AMonsterCharacter;
 
 UCLASS()
 class COPY_STELLARBLADE_API UMonsterStatBarWidget : public UUserWidget
@@ -19,13 +21,23 @@ protected:
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UMonsterHealthBarWidget* HealthBarWidget;
 
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+	UMonsterShieldGageWidget* ShieldGageWidget;
+
+private:
+	AMonsterCharacter* OwnerMonster;
+
 public:
 	UMonsterStatBarWidget(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 public:
 	virtual void NativeConstruct() override;
 
+public:
+	FORCEINLINE AMonsterCharacter* GetOwnerMonster() { return OwnerMonster; };
+	FORCEINLINE void SetOwnerMonster(AMonsterCharacter* Owner) { OwnerMonster = Owner; };
+
 protected:
-	void OnAttributeChanged(ESBAttributeType AttributeType, float InRatio);
+	void OnAttributeChanged(EAttributeType AttributeType, float InRatio);
 
 };

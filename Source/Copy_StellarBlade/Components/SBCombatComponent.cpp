@@ -4,6 +4,7 @@
 #include "Components/SBCombatComponent.h"
 
 #include "Character/EveCharacter.h"
+#include "Character/Monster/MonsterCharacter.h"
 #include "Equipments/SBWeapon.h"
 #include "Items/SBPickupItem.h"
 #include "AI/MonsterAIController.h"
@@ -70,10 +71,9 @@ void USBCombatComponent::SetWeapon(ASBWeapon* NewWeapon, bool isSubWeapon)
 {
     ASBWeapon*& Weapon = isSubWeapon ? SubWeapon : MainWeapon;
 
-    // 이미 무기를 가지고 있으면 PickupItem으로 만들어서 떨군다.
     if (::IsValid(Weapon))
     {
-        if (AEveCharacter* OwnerCharacter = Cast<AEveCharacter>(GetOwner()))
+        if (AMonsterCharacter* OwnerCharacter = Cast<AMonsterCharacter>(GetOwner()))
         {
             ASBPickupItem* PickupItem = GetWorld()->SpawnActorDeferred<ASBPickupItem>(ASBPickupItem::StaticClass(), OwnerCharacter->GetActorTransform(), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
             PickupItem->SetEquipmentClass(Weapon->GetClass());

@@ -63,6 +63,7 @@ public:
 
 public:
 	virtual void EquipItem(bool isSubWeapon = false) override;
+	virtual void UnequipItem(bool isSubWeapon = false) override;
 
 	UAnimMontage* GetMontageForTag(const FGameplayTag& Tag, const int32 Index = 0) const;
 	UAnimMontage* GetRandomMontageForTag(const FGameplayTag& Tag) const;
@@ -83,6 +84,9 @@ public:
 public:
 	void ActivateWeapon();
 	void DeactiveWeapon();
+
+public:
+	bool IsHaveBlinkAttack() const;
 
 public:
 	/** 무기의 Collision에 검출된 Actor에 Damage를 전달 */

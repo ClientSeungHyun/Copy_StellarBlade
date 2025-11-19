@@ -8,10 +8,13 @@
 #define COLLISION_OBJECT_TARGETING ECC_GameTraceChannel1
 
 UENUM(BlueprintType)
-enum class ESBAttributeType : uint8
+enum class EAttributeType : uint8
 {
     Health,
+    Shield,
     Stamina,
+    BetaEnergy,
+    Potion,
 };
 
 UENUM(BlueprintType)

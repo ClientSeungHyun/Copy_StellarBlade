@@ -30,4 +30,6 @@ protected:
 public:
 	UAnimMontage* GetMontageForTag(const FGameplayTag& GroupTag, const int32 Index) const;
 	UAnimMontage* GetRandomMontageForTag(const FGameplayTag& GroupTag) const;
+
+	bool		IsHaveMontageForTag(const FGameplayTag& GroupTag) const;
 };

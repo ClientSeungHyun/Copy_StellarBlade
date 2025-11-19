@@ -27,7 +27,7 @@ void USBEveAtrributeComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 }
 
-void USBEveAtrributeComponent::BroadcastAttributeChanged(ESBAttributeType InAttributeType) const
+void USBEveAtrributeComponent::BroadcastAttributeChanged(EAttributeType InAttributeType) const
 {
 	if (OnAttributeChanged.IsBound())
 	{
@@ -35,8 +35,14 @@ void USBEveAtrributeComponent::BroadcastAttributeChanged(ESBAttributeType InAttr
 		float Ratio = 0.f;
 		switch (InAttributeType)
 		{
-		case ESBAttributeType::Health:
+		case EAttributeType::Health:
 			Ratio = GetHealthRatio();
+			break;
+		case EAttributeType::BetaEnergy:
+			Ratio = CurrentBetaEnergy;
+			break;
+		case EAttributeType::Potion:
+			Ratio = CurrentPotionCount;
 			break;
 		}
 
@@ -54,7 +60,7 @@ void USBEveAtrributeComponent::TakeDamageAmount(float DamageAmount)
 
 	BaseHealth = FMath::Clamp(BaseHealth - DamageAmount, 0.f, MaxHealth);
 
-	BroadcastAttributeChanged(ESBAttributeType::Health);
+	BroadcastAttributeChanged(EAttributeType::Health);
 
 	if (BaseHealth <= 0.f)
 	{
@@ -70,5 +76,29 @@ void USBEveAtrributeComponent::TakeDamageAmount(float DamageAmount)
 			StateComp->SetState(SBEveTags::Eve_State_Death);
 		}
 	}
+}
+
+void USBEveAtrributeComponent::AddBetaEnergy(float num) 
+{
+	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy + num, 0.0f, 100.0f);
+
+	BroadcastAttributeChanged(EAttributeType::BetaEnergy);
+
+	//UE_LOG(LogTemp, Warning, TEXT("BetaEnergy : %f"), CurrentBetaEnergy);
+}
+
+void USBEveAtrributeComponent::UsePotion()
+{
+	BaseHealth = FMath::Clamp(BaseHealth + PotionHealAmount, 0.f, MaxHealth);
+	CurrentPotionCount--;
+
+	BroadcastAttributeChanged(EAttributeType::Health);
+	BroadcastAttributeChanged(EAttributeType::Potion);
+}
+
+void USBEveAtrributeComponent::DecreaseBetaEnergy()
+{
+	CurrentBetaEnergy = FMath::Clamp(CurrentBetaEnergy - SkillUseBetaEnergyAmout, 0.0f, 100.0f);
+	BroadcastAttributeChanged(EAttributeType::BetaEnergy);
 }
 

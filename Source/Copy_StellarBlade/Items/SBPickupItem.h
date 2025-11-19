@@ -8,6 +8,7 @@
 #include "SBPickupItem.generated.h"
 
 class ASBEquipment;
+class USkeletalMeshComponent;
 
 UCLASS()
 class COPY_STELLARBLADE_API ASBPickupItem : public AActor, public ISBInteract
@@ -32,7 +33,7 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Item")
-	UStaticMeshComponent* Mesh;
+	USkeletalMeshComponent* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	TSubclassOf<ASBEquipment> EquipmentClass;

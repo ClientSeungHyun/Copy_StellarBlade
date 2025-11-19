@@ -232,7 +232,7 @@ void UTargetingComponent::FaceLockOnActor() const
 {
 	const FRotator CurrentControlRotation = Character->GetControlRotation();
 
-	const FVector TargetLocation = LockedTargetActor->GetActorLocation() - FVector(0.f, 0.f, 150.f);
+	const FVector TargetLocation = LockedTargetActor->GetActorLocation() - FVector(0.f, 0.f, 100.f);
 	const FRotator TargetLookAtRotation = UKismetMathLibrary::FindLookAtRotation(Character->GetActorLocation(), TargetLocation);
 
 	FRotator InterpRotation = FMath::RInterpTo(CurrentControlRotation, TargetLookAtRotation, GetWorld()->GetDeltaSeconds(), FaceLockOnRotationSpeed);

@@ -18,6 +18,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/DamageEvents.h"
+#include "Monster/MonsterCharacter.h"
+#include "UI/PlayerUI/EveHUD.h"
 
 AEveCharacter::AEveCharacter()
 {
@@ -40,7 +42,7 @@ AEveCharacter::AEveCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 400.0f;
+	SpringArm->TargetArmLength = 360.0f;
 	SpringArm->SetRelativeRotation(FRotator(-30.f, 0.f, 0.f));
 	SpringArm->bUsePawnControlRotation = true;
 
@@ -61,7 +63,16 @@ AEveCharacter::AEveCharacter()
 void AEveCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (EveHUDClass)
+	{
+		Eve_HUD = CreateWidget<UEveHUD>(GetWorld(), EveHUDClass);
+		if (Eve_HUD)
+		{
+			Eve_HUD->AddToViewport();
+		}
+	}
+
 	if (SwordClass && !Sword)
 	{
 		Sword = GetWorld()->SpawnActor<ASBEveWeapon>(
@@ -71,6 +82,11 @@ void AEveCharacter::BeginPlay()
 		Sword->SetOwner(this);
 		Sword->EquipItem();
 	}
+
+
+	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
+	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_PerfectDodge);
+	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Running);
 }
 
 FVector PreviousRootLocation;
@@ -82,16 +98,46 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	CheckLanded();
 
-	/*if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
+	isLockOn = TargetingComponent->IsLockOn();
+
+
+	if (isLockOn)
+	{
+		if (StateComponent->IsCurrentStateEqualToAny(FreePlayerMovementAtLockon_CheckTags))
+		{
+			GetCharacterMovement()->bOrientRotationToMovement = true;
+		}
+		else
+		{
+			GetCharacterMovement()->bOrientRotationToMovement = false;
+		}
+	}
+
+	if (isPressShift)
+	{
+		float CurrentPressTime = FMath::Clamp(GetWorld()->GetTimeSeconds() - PressShiftTime,0.0f,1.0f);
+		//UE_LOG(LogTemp, Warning, TEXT("Press Time : %.2f"), CurrentPressTime);
+
+		if (CurrentPressTime < 0.2f)
+		{
+			bCanPerfectDodge = true;
+		}
+		if (CurrentPressTime < 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Dodge && StateComponent->GetCurrentState() != SBEveTags::Eve_State_PerfectDodge)
+		{
+			bCanPerfectDodge = false;
+			Dodge();
+		}
+		else if(CurrentPressTime > 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Running)
+		{
+			Running();
+		}
+	}
+
+	if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
-		UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
-	}*/
-
-	//if (!Sword)
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Sword Spawn Failed!"));
-	
+		//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
+	}	
 }
 
 void AEveCharacter::NotifyControllerChanged()
@@ -116,18 +162,25 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::NewJump);
 
-		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::IsGuard);
-		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::IsNotGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Started, this, &ThisClass::StartGuard);
+		EnhancedInputComponent->BindAction(Guard_Action, ETriggerEvent::Completed, this, &ThisClass::EndGuard);
 
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Started, this, &ThisClass::Pressed_Shift);
+		EnhancedInputComponent->BindAction(RunDodgeAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
+
+		EnhancedInputComponent->BindAction(MoveAction_F, ETriggerEvent::Triggered, this, &ThisClass::Pressed_W);
+		EnhancedInputComponent->BindAction(MoveAction_B, ETriggerEvent::Triggered, this, &ThisClass::Pressed_S);
+		EnhancedInputComponent->BindAction(MoveAction_L, ETriggerEvent::Triggered, this, &ThisClass::Pressed_A);
+		EnhancedInputComponent->BindAction(MoveAction_R, ETriggerEvent::Triggered, this, &ThisClass::Pressed_D);
+		EnhancedInputComponent->BindAction(MoveAction_F, ETriggerEvent::Completed, this, &ThisClass::Unpress_W);
+		EnhancedInputComponent->BindAction(MoveAction_B, ETriggerEvent::Completed, this, &ThisClass::Unpress_S);
+		EnhancedInputComponent->BindAction(MoveAction_L, ETriggerEvent::Completed, this, &ThisClass::Unpress_A);
+		EnhancedInputComponent->BindAction(MoveAction_R, ETriggerEvent::Completed, this, &ThisClass::Unpress_D);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
 
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &ThisClass::Running);
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &ThisClass::StopRunning);
-
-		//어색하면 Cancle사용
 		EnhancedInputComponent->BindAction(Normal_AttackAction, ETriggerEvent::Started, this, &ThisClass::NormalAttack);
 		EnhancedInputComponent->BindAction(Skill_AttackAction, ETriggerEvent::Started, this, &ThisClass::SkillAttack);
+		EnhancedInputComponent->BindAction(Use_Potion_Action, ETriggerEvent::Started, this, &ThisClass::UsePotion);
 		
 		// LockedOn
 		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Started, this, &ThisClass::LockOnTarget);
@@ -139,6 +192,17 @@ void AEveCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	float HitTime = GetWorld()->GetTimeSeconds();
+
+	if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_PerfectDodge)
+		return 0.f;
+
+	if (bCanPerfectDodge && HitTime - DodgeStartTime <= PerfectDodgeTime)
+	{
+		PerfectDodge();
+		return 0.f;
+	}
+
 	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 
 	if (AttributeComponent)
@@ -194,28 +258,38 @@ bool AEveCharacter::IsMoving() const
 
 void AEveCharacter::Move(const FInputActionValue& Values)
 {
-	FVector2D MovementVector = Values.Get<FVector2D>();
+	check(StateComponent);
 
-	if (isJumping == false)
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
+	CheckTags.AddTag(SBEveTags::Eve_State_PerfectDodge);
+	CheckTags.AddTag(SBEveTags::Eve_State_Attacking);
+
+	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false && isJumping == false)
 	{
-		StateComponent->SetState(SBEveTags::Eve_State_Walking);
-	}
+		FVector2D MovementVector = Values.Get<FVector2D>();
 
-	if (isGuarding)
-		GetCharacterMovement()->MaxWalkSpeed = SlowSpeed;
-	else
-		GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+		if(isPressShift == false)
+			StateComponent->SetState(SBEveTags::Eve_State_Walking);
 
-	if (Controller != nullptr)
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotator(0, Rotation.Yaw, 0);
+		if (isGuarding)
+			GetCharacterMovement()->MaxWalkSpeed = SlowSpeed;
+		else if(StateComponent->GetCurrentState() == SBEveTags::Eve_State_Running)
+			GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
+		else
+			GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 
-		const FVector ForwardVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
-		const FVector RightVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
+		if (Controller != nullptr)
+		{
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotator(0, Rotation.Yaw, 0);
 
-		AddMovementInput(ForwardVector, MovementVector.Y);
-		AddMovementInput(RightVector, MovementVector.X);
+			const FVector ForwardVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
+			const FVector RightVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
+
+			AddMovementInput(ForwardVector, MovementVector.Y);
+			AddMovementInput(RightVector, MovementVector.X);
+		}
 	}
 }
 
@@ -230,26 +304,123 @@ void AEveCharacter::Look(const FInputActionValue& Values)
 	}
 }
 
+void AEveCharacter::Pressed_W(const FInputActionValue& Values)
+{
+	isPressed_W = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_A(const FInputActionValue& Values)
+{
+	isPressed_A = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_S(const FInputActionValue& Values)
+{
+	isPressed_S = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Pressed_D(const FInputActionValue& Values)
+{
+	isPressed_D = true;
+
+	Move(Values);
+}
+
+void AEveCharacter::Unpress_W()
+{
+	isPressed_W = false;
+}
+
+void AEveCharacter::Unpress_A()
+{
+	isPressed_A = false;
+}
+
+void AEveCharacter::Unpress_S()
+{
+	isPressed_S = false;
+}
+
+void AEveCharacter::Unpress_D()
+{
+	isPressed_D = false;
+}
+
 void AEveCharacter::Running()
 {
-	if (IsMoving())
+	//닷지 후 달리기 시 몽타주가 완전히 끝나지 않아도 상태 전환
+	if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_Dodge)
 	{
-		if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_Walking)
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		float Position = AnimInstance->Montage_GetPosition(CurrentPlaying_AM);
+		float Length = CurrentPlaying_AM->GetPlayLength();
+		float Ratio = Position / Length;
+
+		if (Ratio > 0.5f)
 		{
+			AnimInstance->Montage_Stop(0.2f, CurrentPlaying_AM);
 			StateComponent->SetState(SBEveTags::Eve_State_Running);
 		}
-
-		GetCharacterMovement()->MaxWalkSpeed = SprintingSpeed;
 	}
-	else
+	else	
 	{
-		StopRunning();
+		StateComponent->SetState(SBEveTags::Eve_State_Running);
 	}
 }
 
 void AEveCharacter::StopRunning()
 {
-	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+	isPressShift = false;
+}
+
+void AEveCharacter::Dodge()
+{
+	StateComponent->SetState(SBEveTags::Eve_State_Dodge);
+
+	DodgeStartTime = GetWorld()->GetTimeSeconds();
+
+	if (TargetingComponent->IsLockOn() == false)
+	{
+		if (isPressed_W)
+		{
+			PlayAnimMontage(DodgeAnimFront);
+			CurrentPlaying_AM = DodgeAnimFront;
+		}
+		else
+		{
+			PlayAnimMontage(DodgeAnimBack);
+			CurrentPlaying_AM = DodgeAnimBack;
+		}
+	}
+	else
+	{
+		if (isPressed_A)
+		{
+			PlayAnimMontage(DodgeAnimLeft);
+			CurrentPlaying_AM = DodgeAnimLeft;
+		}
+		else if (isPressed_D)
+		{
+			PlayAnimMontage(DodgeAnimRight);
+			CurrentPlaying_AM = DodgeAnimRight;
+		}
+		else if (isPressed_W)
+		{
+			PlayAnimMontage(DodgeAnimFront);
+			CurrentPlaying_AM = DodgeAnimFront;
+		}
+		else
+		{
+			PlayAnimMontage(DodgeAnimBack);
+			CurrentPlaying_AM = DodgeAnimBack;
+		}
+	}
 }
 
 void AEveCharacter::Idle()
@@ -270,14 +441,62 @@ void AEveCharacter::NewJump()
 	}
 }
 
-void AEveCharacter::IsGuard()
+void AEveCharacter::StartGuard()
 {
 	isGuarding = true;
+	GuardStartTime = GetWorld()->GetTimeSeconds();
+	isPerfectGuarded = false;
 }
 
-void AEveCharacter::IsNotGuard()
+void AEveCharacter::EndGuard()
 {
 	isGuarding = false;
+}
+
+void AEveCharacter::PerfectGuard()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+	isPerfectGuarded = true;
+	AttributeComponent->AddBetaEnergy(10.f);
+}
+
+void AEveCharacter::PerfectDodge()
+{
+	StateComponent->SetState(SBEveTags::Eve_State_PerfectDodge);
+
+	if (TargetingComponent->IsLockOn())
+	{
+		if (isPressed_A)
+		{
+			PlayAnimMontage(PerfectDodgeAnim_Left);
+			CurrentPlaying_AM = PerfectDodgeAnim_Left;
+		}
+		else if (isPressed_D)
+		{
+			PlayAnimMontage(PerfectDodgeAnim_Right);
+			CurrentPlaying_AM = PerfectDodgeAnim_Right;
+		}
+		else
+		{
+			PlayAnimMontage(PerfectDodgeAnim_Back);
+			CurrentPlaying_AM = PerfectDodgeAnim_Back;
+		}
+	}
+	else
+	{
+		PlayAnimMontage(PerfectDodgeAnim_Back);
+		CurrentPlaying_AM = PerfectDodgeAnim_Back;
+	}
+}
+
+void AEveCharacter::UsePotion()
+{
+	if (AttributeComponent->GetHealthRatio() >= 1.f || AttributeComponent->GetCurrentPotionCount() == 0)
+		return;
+
+	PlayAnimMontage(PotionAnim);
+	bUsePotion = true;
+	AttributeComponent->UsePotion();
 }
 
 void AEveCharacter::CheckLanded()
@@ -294,12 +513,12 @@ void AEveCharacter::CheckLanded()
 		isJumping = false;
 		Idle();
 	}
-
 }
 
 void AEveCharacter::LockOnTarget()
 {
 	TargetingComponent->ToggleLockOn();
+	GetCharacterMovement()->bOrientRotationToMovement = !TargetingComponent->IsLockOn();
 }
 
 void AEveCharacter::NormalAttack()
@@ -312,16 +531,30 @@ void AEveCharacter::NormalAttack()
 
 void AEveCharacter::SkillAttack()
 {
+	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergy() < 40.f)
+		return;
+
+	AttributeComponent->DecreaseBetaEnergy();
+	ExecuteComboAttack(SBEveTags::Eve_Attack_SkillAttack);
+}
+
+void AEveCharacter::BlinkAttack()
+{
 	if (CanPerformAttack() == false)
 		return;
 
-	ExecuteComboAttack(SBEveTags::Eve_Attack_SkillAttack);
+	ExecuteComboAttack(SBEveTags::Eve_Attack_BlinkAttack);
+}
+
+void AEveCharacter::RepulseAttack()
+{
+	ExecuteComboAttack(SBEveTags::Eve_Attack_RepulseAttack);
 }
 
 void AEveCharacter::EnableComboWindow()
 {
 	bCanComboInput = true;
-	UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
+	//UE_LOG(LogTemp, Warning, TEXT("Combo Window Opened: Combo Counter = %d"), ComboCounter);
 }
 
 void AEveCharacter::DisableComboWindow()
@@ -332,12 +565,12 @@ void AEveCharacter::DisableComboWindow()
 	{
 		bSavedComboInput = false;
 		ComboCounter++;
-		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
+		//UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: Advancing to next combo = %d"), ComboCounter);
 		DoAttack(Sword->GetLastAttackTag());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: No input received"));
+		//UE_LOG(LogTemp, Warning, TEXT("Combo Window Closed: No input received"));
 	}
 }
 
@@ -348,9 +581,10 @@ bool AEveCharacter::CanPerformAttack()
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(SBEveTags::Eve_State_Falling);
 	CheckTags.AddTag(SBEveTags::Eve_State_JumpStart);
-	CheckTags.AddTag(SBEveTags::Eve_State_Guard);
+	CheckTags.AddTag(SBEveTags::Eve_State_Hit);
+	CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
 
-	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false)
+	if (StateComponent->IsCurrentStateEqualToAny(CheckTags) == false && isGuarding == false)
 		return true;
 	else
 		return false;
@@ -386,11 +620,8 @@ void AEveCharacter::DoAttack(const FGameplayTag& AttackTypeTag)
 
 void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 {
-	static int32 test = 0;
-	//StateComponent->GetCurrentState() != SBEveTags::Eve_State_Attacking
 	if (isAttacking == false)
 	{
-		test++;
 		StateComponent->SetState(SBEveTags::Eve_State_Attacking);
 		//UE_LOG(LogTemp, Warning, TEXT(">>> ComboSequence Started <<<"));
 		ResetCombo();
@@ -410,9 +641,23 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 
 void AEveCharacter::HitReaction(const AActor* Attacker)
 {
+	float HitTime = GetWorld()->GetTimeSeconds();
+
+	//퍼팩트 패링(가드)
+	if (isGuarding && HitTime - GuardStartTime <= PerfectGuardTime)
+	{
+		PerfectGuard();
+		return;
+	}
+
 	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
 	{
+		StateComponent->SetState(SBEveTags::Eve_State_Hit);
+
 		float DelaySeconds = PlayAnimMontage(HitReactAnimMontage);
+
+		if (isAttacking)
+			isAttacking = false;
 	}
 }
 
@@ -430,23 +675,23 @@ UAnimMontage* AEveCharacter::GetHitReactAnimation(const AActor* Attacker) const
 	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
 	{
 		HitDirection = EHitDirection::Front;
-		UE_LOG(LogTemp, Log, TEXT("Front"));
+		//UE_LOG(LogTemp, Log, TEXT("Front"));
 	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
 	{
 		HitDirection = EHitDirection::Left;
-		UE_LOG(LogTemp, Log, TEXT("Left"));
+		//UE_LOG(LogTemp, Log, TEXT("Left"));
 	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f)
 		|| UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
 	{
 		HitDirection = EHitDirection::Back;
-		UE_LOG(LogTemp, Log, TEXT("Back"));
+		//UE_LOG(LogTemp, Log, TEXT("Back"));
 	}
 	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
 	{
 		HitDirection = EHitDirection::Right;
-		UE_LOG(LogTemp, Log, TEXT("Right"));
+		//UE_LOG(LogTemp, Log, TEXT("Right"));
 	}
 
 	UAnimMontage* SelectedMontage = nullptr;
@@ -469,9 +714,57 @@ UAnimMontage* AEveCharacter::GetHitReactAnimation(const AActor* Attacker) const
 	return SelectedMontage;
 }
 
+void AEveCharacter::TeleportBehindTarget(AActor* TargetActor, float DistanceBehind)
+{
+	if (!TargetActor) return;
+
+	// 타깃의 위치와 방향 가져오기
+	FVector TargetLocation = TargetActor->GetActorLocation();
+	FRotator TargetRotation = TargetActor->GetActorRotation();
+	FVector TargetForward = TargetActor->GetActorForwardVector();
+
+	// 타깃 뒤쪽 위치 계산
+	FVector TeleportLocation = TargetLocation - (TargetForward * DistanceBehind);
+
+	// 현재 캐릭터 높이 보정 (지면보다 아래로 순간이동 방지)
+	TeleportLocation.Z = GetActorLocation().Z;
+
+	// 회전 방향: 타깃을 바라보게 설정 (선택 사항)
+	FRotator NewRotation = (TargetLocation - TeleportLocation).Rotation();
+
+	// 순간이동 실행
+	SetActorLocationAndRotation(TeleportLocation, NewRotation, false, nullptr, ETeleportType::TeleportPhysics);
+
+	//UE_LOG(LogTemp, Warning, TEXT("상대 뒤 %.1fcm 위치로 순간이동!"), DistanceBehind);
+}
+
+void AEveCharacter::Pressed_Shift()
+{
+	if (isLockOn)
+	{
+		AActor* targetActor = TargetingComponent->GetLockedTargetActor();
+		AMonsterCharacter* targetMonster = Cast<AMonsterCharacter>(targetActor);
+
+		if (targetMonster->GetAllowCounterAttack_Blink() && isPressed_W)
+		{
+			BlinkAttack();
+			TeleportBehindTarget(targetActor, BlinkMoveBackDistance);
+			return;
+		}
+		else if (targetMonster->GetAllowCounterAttack_Repulse() && isPressed_S)
+		{
+			RepulseAttack();
+			return;
+		}
+	}
+
+	isPressShift = true;
+	PressShiftTime = GetWorld()->GetTimeSeconds();
+}
+
 void AEveCharacter::AttackFinished(const float ComboResetDelay)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AttackFinished"));
+	//UE_LOG(LogTemp, Warning, TEXT("AttackFinished"));
 	if (StateComponent)
 	{
 		StateComponent->ToggleMovementInput(true);
@@ -479,6 +772,7 @@ void AEveCharacter::AttackFinished(const float ComboResetDelay)
 	}
 	// ComboResetDelay 후에 콤보 시퀀스 종료
 	GetWorld()->GetTimerManager().SetTimer(ComboResetTimerHandle, this, &ThisClass::ResetCombo, ComboResetDelay, false);
+	Idle();
 }
 
 //void AEveCharacter::LeftTarget()
