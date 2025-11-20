@@ -457,7 +457,7 @@ void AEveCharacter::EndGuard()
 
 void AEveCharacter::PerfectGuard()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+	PlayWorldSlowMotion(0.3,0.1);
 	isPerfectGuarded = true;
 	AttributeComponent->AddBetaEnergy(10.f);
 }
@@ -465,6 +465,8 @@ void AEveCharacter::PerfectGuard()
 void AEveCharacter::PerfectDodge()
 {
 	StateComponent->SetState(SBEveTags::Eve_State_PerfectDodge);
+
+	PlayWorldSlowMotion(0.8, 1.0);
 
 	if (TargetingComponent->IsLockOn())
 	{
@@ -647,6 +649,45 @@ void AEveCharacter::PlayShakeCamera()
 	if (!PC) return;
 
 	PC->PlayerCameraManager->StartCameraShake(ShakeCamera, 1.0f);
+}
+
+void AEveCharacter::ApplyHitLag(float HitLagDuration, float HitLagScale)
+{
+	// 전체 게임 시간 멈칫
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1f);
+
+	// 0.05초 후 원래 속도로 복귀
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(TimerHandle,
+		[this]()
+		{
+			UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+		},
+		0.05f,
+		false 
+	);
+}
+
+void AEveCharacter::PlayWorldSlowMotion(float SlowAmount, float Duration)
+{ // 슬로우 강도 보정 (0 ~ 1)
+	SlowAmount = FMath::Clamp(SlowAmount, 0.01f, 1.0f);
+
+	UE_LOG(LogTemp, Warning, TEXT("SlowMotion: Amount=%.2f, Duration=%.2f"), SlowAmount, Duration);
+
+	// 월드 슬로우 적용
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), SlowAmount);
+
+	// Duration 후 원상복구
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(
+		TimerHandle,
+		[this]()
+		{
+			UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+		},
+		Duration,
+		false
+	);
 }
 
 void AEveCharacter::HitReaction(const AActor* Attacker)

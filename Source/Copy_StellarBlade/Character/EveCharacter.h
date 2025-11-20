@@ -287,6 +287,8 @@ protected:
 	void ExecuteComboAttack(const FGameplayTag& AttackTypeTag);
 
 	void PlayShakeCamera();
+	void ApplyHitLag(float HitLagDuration, float HitLagScale);
+	void PlayWorldSlowMotion(float SlowAmount, float Duration);
 
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
