@@ -36,6 +36,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	bool bHaveTarget;
 
+	UPROPERTY(VisibleAnywhere)
+	bool bIsLookingPlayer;
+
 	UPROPERTY(EditAnywhere)
 	float FollowMaxRange;
 
@@ -57,4 +60,10 @@ protected:
 	void OnBattleStartMontageEnded(UAnimMontage* Montage, bool bInterrupted, AMonsterCharacter* Monster);
 
 	FORCEINLINE bool IsHaveTarget() { return bHaveTarget; }
+
+public:
+	//FORCEINLINE void SetIsLookingPlayer(bool InIsLookingTarget) { 
+	//	bIsLookingPlayer = InIsLookingTarget; 
+	//}
+	void SetIsLookingPlayer(bool InIsLookingTarget);
 };

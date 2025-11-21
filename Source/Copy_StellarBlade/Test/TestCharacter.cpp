@@ -25,20 +25,6 @@ void ATestCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
-	//{
-	//	CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//}
-
-	//// Ragdoll
-	//if (USkeletalMeshComponent* MeshComp = GetMesh())
-	//{
-	//	MeshComp->SetCollisionProfileName("Ragdoll");
-	//	MeshComp->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	//	MeshComp->SetSimulatePhysics(true);
-	//}
-
-
 
 	SelectVertices(0);
 	ApplyVertexAlphaToSkeletalMesh();
@@ -162,7 +148,7 @@ void ATestCharacter::SelectVertices(int32 LODIndex)
 
 	//현재 LOD의 총 Index 수를 가져온다.
 	const int32 NumIndices = IndexBuffer->Num();
-	Indices.SetNum(NumIndices); // 모든 값을 0으로 초기화하며 메모리 공간 확보보
+	Indices.SetNum(NumIndices);
 	for (int32 i = 0; i < NumIndices; i += 3) {
 		//IndexBuffer Get(i) - 현재 처리 중인 삼각형을 구성하는 버텍스 인덱스를 가져옴.
 		//VertexIndex : Get(0) = a, Get(1) = b, Get(2) = c로 abc삼각형, Get(3) = c, Get(4) = d, Get(5) = a로 cda삼각형 (여기서 abcd는 FVector위치라고 취급)
@@ -286,43 +272,50 @@ void ATestCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
 	ProcMeshComponent->SetSimulatePhysics(false);
 	OtherHalfMesh->SetSimulatePhysics(false);
 
+	//FTransform BoneWorldTransform = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_World);
+	//FTransform MeshWorldTransform = ProcMeshComponent->GetComponentTransform();
+
+	//FTransform LocalToBone = MeshWorldTransform.GetRelativeTransform(BoneWorldTransform);
+	//ProcMeshComponent->SetRelativeTransform(LocalToBone);
+
 	//Procedural Mesh를 특정 Socket에 Attach
 	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
-	ProcMeshComponent->AttachToComponent(GetMesh(), TransformRules, ProceduralMeshAttachSocketName);
-	OtherHalfMesh->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
+	ProcMeshComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale);
+	OtherHalfMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale);
+	//OtherHalfMesh->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
 
-	OtherHalfMesh->SetVisibility(false);
-
-
-	// Attach with SnapToTarget
-	//FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
-	//ProcMeshComponent->AttachToComponent(GetMesh(), AttachRules, ProceduralMeshAttachSocketName);
-	//OtherHalfMesh->AttachToComponent(GetMesh(), AttachRules, OtherHalfMeshAttachSocketName);
-
-	FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
-	FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
+	//OtherHalfMesh->SetVisibility(false);
 
 
+	//// Attach with SnapToTarget
+	////FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+	////ProcMeshComponent->AttachToComponent(GetMesh(), AttachRules, ProceduralMeshAttachSocketName);
+	////OtherHalfMesh->AttachToComponent(GetMesh(), AttachRules, OtherHalfMeshAttachSocketName);
 
-	ProcMeshComponent->SetRelativeRotation(ProcSocketRot);
-	OtherHalfMesh->SetRelativeRotation(OtherSocketRot);
-	ProcMeshComponent->AddLocalRotation(FRotator(0.f, 0.f, 180.f));
+	//FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
+	//FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
 
-	FTransform SocketTransform = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_World);
-	FVector LocalCenter = GetAverageVertexPosition(FilteredVerticesArray);
 
-	FVector WorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(LocalCenter);
-	FVector Offset = SocketTransform.GetLocation() - WorldCenter;
 
-	ProcMeshComponent->SetWorldLocation(SocketTransform.GetLocation() + Offset);
+	//ProcMeshComponent->SetRelativeRotation(ProcSocketRot);
+	//OtherHalfMesh->SetRelativeRotation(OtherSocketRot);
+	//ProcMeshComponent->AddLocalRotation(FRotator(0.f, 0.f, 180.f));
+
+	//FTransform SocketTransform = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_World);
+	//FVector LocalCenter = GetAverageVertexPosition(FilteredVerticesArray);
+
+	//FVector WorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(LocalCenter);
+	//FVector Offset = SocketTransform.GetLocation() - WorldCenter;
+
+	//ProcMeshComponent->SetWorldLocation(SocketTransform.GetLocation() + Offset);
 
 	//Ragdoll 적용 & Bone 자름.
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->BreakConstraint(FVector(0.f, 0.f, 0.f), FVector::ZeroVector, TargetBoneName);
-	GetMesh()->SetSimulatePhysics(false);
+	GetMesh()->BreakConstraint(FVector(1000.f, 1000.f, 10000.f), FVector::ZeroVector, TargetBoneName);
+	GetMesh()->SetSimulatePhysics(true);
 
 	//Procedural Mesh에 물리 적용
-	//ProcMeshComponent->SetSimulatePhysics(true); //-> true 시 따로 움직인다.
+	ProcMeshComponent->SetSimulatePhysics(true); //-> true 시 따로 움직인다.
 	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
@@ -337,103 +330,127 @@ FVector ATestCharacter::GetAverageVertexPosition(const TArray<FVector>& Vertices
 	return Sum / Vertices.Num();
 }
 
-
-//void ATestCharacter::CreateProceduralMesh()
+//void ATestCharacter::SliceMesh()
 //{
-	//USkeletalMeshComponent* SkeletalMesh = GetMesh();
-
-	//if (!SkeletalMesh || !SkeletalMesh->GetSkeletalMeshAsset())
-	//{
-	//	return;
-	//}
-
-	//USkeletalMesh* SkeletalMeshAsset = SkeletalMesh->GetSkeletalMeshAsset();
-	////const int32 BoneIndex = SkeletalMesh->GetBoneIndex(BoneName);
-
-	////if (BoneIndex == INDEX_NONE)
-	////{
-	////	UE_LOG(LogTemp, Warning, TEXT("Bone '%s' not found!"), *BoneName.ToString());
-	////	return nullptr;
-	////}
-
-	//// 버텍스 및 트라이앵글 데이터를 수집하기 위한 변수
-	//TArray<FVector> Vertices;
-	//TArray<FVector> Normals;
-	//TArray<FVector2D> UVs;
-	//TArray<FLinearColor> VertexColors;
-	//TArray<FProcMeshTangent> Tangents;
-
-	//// 본에 연결된 버텍스 수집
-	//const FSkeletalMeshRenderData* RenderData = SkeletalMeshAsset->GetResourceForRendering();
-	//const FSkeletalMeshLODRenderData& LODData = RenderData->LODRenderData[0];
-	//const FSkelMeshRenderSection& Section = LODData.RenderSections[0];
-
-	//for (uint32 VertexIndex = 0; VertexIndex < Section.NumVertices; ++VertexIndex)
-	//{
-	//	const int32 MappedBoneIndex = LODData.SkinWeightVertexBuffer.GetBoneIndex(VertexIndex, 0);
-
-	//	FVector VertexPosition = static_cast<FVector>(LODData.StaticVertexBuffers.PositionVertexBuffer.VertexPosition(VertexIndex));
-	//	FVector Normal = static_cast<FVector>(LODData.StaticVertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(VertexIndex));
-	//	FVector2D UV = static_cast<FVector2D>(LODData.StaticVertexBuffers.StaticMeshVertexBuffer.GetVertexUV(VertexIndex, 0));
-
-	//	Vertices.Add(VertexPosition);
-	//	Normals.Add(Normal);
-	//	UVs.Add(UV);
-	//	Tangents.Add(FProcMeshTangent());
-	//	VertexColors.Add(FColor(0, 0, 0, 255));
-	//}
-
-	//TArray<int32> Triangles;
-
-	//const FRawStaticIndexBuffer16or32Interface* IndexBuffer = LODData.MultiSizeIndexContainer.GetIndexBuffer();
-	//// 삼각형 인덱스 데이터 생성 (단순 연결)
-	//const int32 NumIndices = IndexBuffer->Num();
-
-	////메모리 미리 확보
-	//Triangles.SetNumUninitialized(NumIndices);
-	//for (int32 i = 0; i < NumIndices; i++)
-	//{
-	//	//IndexBuffer Get(i) - 현재 처리 중인 삼각형을 구성하는 버텍스 인덱스를 가져옴.
-	//	//결과적으로 Indices를 순환하면 3개씩 묶어서 삼각형을 그릴 수 있다.
-	//	Triangles[i] = static_cast<int32>(IndexBuffer->Get(i));
-	//}
-
-
-	//// 프로시저럴 메시 생성
-	//ProceduralMesh = NewObject<UProceduralMeshComponent>(this);
-	//ProceduralMesh->RegisterComponent();
-	//ProceduralMesh->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::KeepWorldTransform);
-
-	//ProceduralMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
-	////ProcMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
-
-	//	//Convex Collision 추가
-	//if (Vertices.Num() > 0)
-	//{
-	//	ProceduralMesh->ClearCollisionConvexMeshes();  // 기존 Collision 삭제
-	//	//Convex Collision - 현재 Vertex 기반으로 Convex(볼록한) Collision 생성
-	//	ProceduralMesh->AddCollisionConvexMesh(Vertices);  // Convex Collision 추가
-	//}
-
-	//ProceduralMesh->SetWorldLocation(GetMesh()->GetComponentLocation());
-	//ProceduralMesh->SetWorldRotation(GetMesh()->GetComponentRotation());
-
-	//ProceduralMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	//ProceduralMesh->SetCollisionObjectType(ECC_WorldDynamic);
-	//ProceduralMesh->SetSimulatePhysics(true);
-	//ProceduralMesh->SetEnableGravity(true);
-
-	//UMaterialInterface* SkeletalMeshMaterial = GetMesh()->GetMaterial(0);
-	//if (SkeletalMeshMaterial)
-	//{
-	//	ProceduralMesh->SetMaterial(0, SkeletalMeshMaterial);
-	//	UE_LOG(LogTemp, Display, TEXT("Applied material from SkeletalMesh to ProceduralMesh."));
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("SkeletalMesh has no material assigned."));
-	//}
-
-	//GetMesh()->SetVisibility(false);
+//	TRACE_CPUPROFILER_EVENT_SCOPE(SliceMesh_Sync);
+//	check(NumVertices != 0);
+//
+//	USkeletalMeshComponent* OriginMeshComp = GetMesh();
+//	FVector TargetBoneLocation = OriginMeshComp->GetBoneLocation(TargetBoneName);
+//
+//	FPlane SlicePlane = FPlane(TargetBoneLocation, FVector::UpVector);
+//
+//	if (!OriginMeshComp->IsVisible())
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("Invisible meshes cannot be sliced."));
+//		return;
+//	}
+//
+//	TSet<uint32> PSideVertices;
+//	TSet<uint32> NSideVertices;
+//	TSet<uint32> IntersectingVertices;
+//	SplitVerticesByPlane(SlicePlane, PSideVertices, NSideVertices, IntersectingVertices);
+//	if (PSideVertices.IsEmpty() || NSideVertices.IsEmpty() || IntersectingVertices.IsEmpty())
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("The plane and the mesh do not intersect."));
+//		return;
+//	}
+//
+//
+//	USkeletalMesh* PSideSkeletalMesh = BuildVertexToSkeletalMesh(PSideVertices, FName(TEXT("PSide")));
+//	USkeletalMesh* NSideSkeletalMesh = BuildVertexToSkeletalMesh(NSideVertices, FName(TEXT("NSide")));
+//	//UAPSkinnedProceduralMeshComponent* ProceduralMeshComp = BuildVertexToProceduralMeshComp(IntersectingVertices);
 //}
-
+//
+//USkeletalMesh* ATestCharacter::BuildVertexToSkeletalMesh(const TSet<uint32>& Indices, const FName& AssetNameTag)
+//{
+//	USkeletalMesh* OriginalMesh = GetMesh()->GetSkeletalMeshAsset();
+//	FName NewAssetName = MakeUniqueObjectName(this, USkeletalMesh::StaticClass(),
+//		*FString::Printf(TEXT("%s_%s"), *OriginalMesh->GetName(), *AssetNameTag.ToString()));
+//
+//	USkeletalMesh* NewSkeletalMesh = NewObject<USkeletalMesh>(this, NewAssetName);
+//	//APSkeletalMeshBuilder Builder(NewSkeletalMesh, OriginalMesh, Indices);
+//
+//	//if (Builder.BuildSkeletalMesh())
+//	//{
+//	//	return NewSkeletalMesh;
+//	//}
+//
+//	return nullptr;
+//}
+//
+//void ATestCharacter::SplitVerticesByPlane(const FPlane& SlicePlane,
+//	TSet<uint32>& OutPositiveVertexIndices,
+//	TSet<uint32>& OutNegativeVertexIndices,
+//	TSet<uint32>& OutIntersectingVertexIndices) const
+//{
+//	TRACE_CPUPROFILER_EVENT_SCOPE(SliceMesh_Split);
+//	OutPositiveVertexIndices.Empty();
+//	OutNegativeVertexIndices.Empty();
+//	OutIntersectingVertexIndices.Empty();
+//
+//	TArray<FFinalSkinVertex> SkinnedVertices;
+//	GetCPUSkinnedVertices(SkinnedVertices, 0);
+//	if (SkinnedVertices.Num() != NumVertices)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("[SplitVerticesByPlane] SkinnedVertices size mismatch! Expected: %d, Actual: %d"), NumVertices, SkinnedVertices.Num());
+//		return;
+//	}
+//
+//	const FPlane LocalSlicePlane = SlicePlane.TransformBy(GetComponentTransform().Inverse().ToMatrixWithScale());
+//
+//	TArray<float> Distances;
+//	Distances.SetNumUninitialized(NumVertices);
+//
+//	ParallelFor(NumVertices, [&](int32 VertexIndex)
+//		{
+//			Distances[VertexIndex] = LocalSlicePlane.PlaneDot(FVector(SkinnedVertices[VertexIndex].Position));
+//		});
+//
+//	const FSkeletalMeshLODRenderData& LODData = GetSkeletalMeshRenderData()->LODRenderData[0];
+//	TArray<uint32> IndexBuffer;
+//	LODData.MultiSizeIndexContainer.GetIndexBuffer(IndexBuffer);
+//
+//	FCriticalSection IntersectingSetLock;
+//
+//	const int32 NumTriangles = IndexBuffer.Num() / 3;
+//
+//	ParallelFor(NumTriangles, [&](int32 TriIndex)
+//		{
+//			const int32 BaseIndex = TriIndex * 3;
+//			const uint32 I0 = IndexBuffer[BaseIndex + 0];
+//			const uint32 I1 = IndexBuffer[BaseIndex + 1];
+//			const uint32 I2 = IndexBuffer[BaseIndex + 2];
+//
+//			if (Distances.IsValidIndex(I0) && Distances.IsValidIndex(I1) && Distances.IsValidIndex(I2))
+//			{
+//				const float D0 = Distances[I0];
+//				const float D1 = Distances[I1];
+//				const float D2 = Distances[I2];
+//
+//				const float DMin = FMath::Min3(D0, D1, D2);
+//				const float DMax = FMath::Max3(D0, D1, D2);
+//
+//				if (DMin < 0.0f && DMax > 0.0f)
+//				{
+//					FScopeLock Lock(&IntersectingSetLock);
+//					OutIntersectingVertexIndices.Add(I0);
+//					OutIntersectingVertexIndices.Add(I1);
+//					OutIntersectingVertexIndices.Add(I2);
+//				}
+//			}
+//		});
+//
+//	for (uint32 i = 0; i < NumVertices; ++i)
+//	{
+//		if (Distances[i] > 0.0f)
+//		{
+//			OutPositiveVertexIndices.Add(i);
+//		}
+//		else
+//		{
+//			OutNegativeVertexIndices.Add(i);
+//		}
+//	}
+//}
+//

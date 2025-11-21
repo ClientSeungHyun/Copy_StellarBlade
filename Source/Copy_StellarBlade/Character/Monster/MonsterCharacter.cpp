@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MonsterCharacter.h"
@@ -24,6 +24,7 @@
 #include "Sound/SoundCue.h"
 #include "UI/SBStatBarWidget.h"
 #include "UI/Monster/MonsterStatBarWidget.h"
+#include "AI/MonsterAIController.h"
 
 #include "ProceduralMeshComponent.h"
 #include "Rendering/SkeletalMeshRenderData.h"
@@ -33,14 +34,14 @@ AMonsterCharacter::AMonsterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Targeting ±¸Ã¼ »ı¼º¹× Collision ¼³Á¤.
+	// Targeting êµ¬ì²´ ìƒì„±ë° Collision ì„¤ì •.
 	TargetingSphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("TargetingSphere"));
 	TargetingSphereComponent->SetupAttachment(GetRootComponent());
 	TargetingSphereComponent->SetCollisionObjectType(COLLISION_OBJECT_TARGETING);
 	TargetingSphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
 	TargetingSphereComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
-	// LockOn À§Á¬.
+	// LockOn ìœ„ì ¯.
 	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
 	LockOnWidgetComponent->SetupAttachment(GetRootComponent());
 	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
@@ -98,8 +99,8 @@ void AMonsterCharacter::BeginPlay()
 
 	if (!DefaultWeaponClass.IsEmpty())
 	{
-		// ±âº» ¹«±â Array¿¡¼­ 2°³±îÁö¸¸ ¼­ºê ¿şÆùÀ¸·Î ÁöÁ¤
-		// 0¹øÀº Main 1¹øÀº Sub
+		// ê¸°ë³¸ ë¬´ê¸° Arrayì—ì„œ 2ê°œê¹Œì§€ë§Œ ì„œë¸Œ ì›¨í°ìœ¼ë¡œ ì§€ì •
+		// 0ë²ˆì€ Main 1ë²ˆì€ Sub
 		if (!DefaultWeaponClass.IsEmpty())
 		{
 			int32 WeaponCount = 0;
@@ -134,7 +135,7 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 
 	if (AttributeComponent)
 	{
-		AttributeComponent->TakeDamageAmount(ActualDamage * 1000.f);
+		AttributeComponent->TakeDamageAmount(ActualDamage);
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
 
@@ -142,13 +143,13 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 	{
 		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
 
-		// µ¥¹ÌÁö ¹æÇâ
+		// ë°ë¯¸ì§€ ë°©í–¥
 		FVector ShotDirection = PointDamageEvent->ShotDirection;
-		// È÷Æ® À§Ä¡ (Ç¥¸é Á¢ÃË °üÁ¡)
+		// íˆíŠ¸ ìœ„ì¹˜ (í‘œë©´ ì ‘ì´‰ ê´€ì )
 		FVector ImpactPoint = PointDamageEvent->HitInfo.ImpactPoint;
-		// È÷Æ® ¹æÇâ
+		// íˆíŠ¸ ë°©í–¥
 		FVector ImpactDirection = PointDamageEvent->HitInfo.ImpactNormal;
-		// È÷Æ®ÇÑ °´Ã¼ÀÇ Location (°´Ã¼ Áß½É °üÁ¡)
+		// íˆíŠ¸í•œ ê°ì²´ì˜ Location (ê°ì²´ ì¤‘ì‹¬ ê´€ì )
 		FVector HitLocation = PointDamageEvent->HitInfo.Location;
 
 		ImpactEffect(ImpactPoint);
@@ -209,13 +210,54 @@ void AMonsterCharacter::HitReaction(const AActor* Attacker)
 {
 	check(CombatComponent)
 
-		if (CombatComponent->GetMainWeapon())
+	AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(GetController());
+	if (!MonsterAIController)
+		return;
+
+	UBrainComponent* Brain = MonsterAIController->GetBrainComponent();
+	if (!Brain)
+		return;
+
+	if (CombatComponent->GetMainWeapon())
+	{
+		if (UAnimMontage* HitReactAnimMontage = CombatComponent->GetMainWeapon()->GetHitReactMontage(Attacker))
 		{
-			if (UAnimMontage* HitReactAnimMontage = CombatComponent->GetMainWeapon()->GetHitReactMontage(Attacker))
+			Brain->StopLogic(TEXT("Hit"));
+			PlayAnimMontage(HitReactAnimMontage);
+
+			if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 			{
-				PlayAnimMontage(HitReactAnimMontage);
+				FOnMontageEnded EndDelegate;
+				EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
+					{
+						AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(GetController());
+						if (!MonsterAIController)
+							return;
+
+						UBrainComponent* Brain = MonsterAIController->GetBrainComponent();
+						if (!Brain)
+							return;
+
+						const float DelayTime = 0.6f;
+						FTimerHandle TimerHandle;
+						if (UWorld* World = GetWorld())
+						{
+							World->GetTimerManager().SetTimer(
+								TimerHandle,
+								[Brain]()
+								{
+									Brain->StartLogic();
+								},
+								DelayTime,
+								false
+							);
+						}
+					});
+
+				AnimInstance->Montage_SetEndDelegate(EndDelegate, HitReactAnimMontage);
 			}
 		}
+	}
 }
 
 void AMonsterCharacter::OnTargeted(bool bTargeted)
@@ -306,11 +348,11 @@ void AMonsterCharacter::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnd
 			{
 				UKismetSystemLibrary::PrintString(
 					this,
-					FString::Printf(TEXT("%s °ø°İÀÌ ½ÇÇàµÊ"), *AttackTypeTag.ToString()),  // ¹®ÀÚ¿­ Æ÷¸Ë
-					true,   // È­¸é¿¡ Ç¥½Ã
-					true,   // ·Î±×¿¡µµ Ç¥½Ã
+					FString::Printf(TEXT("%s ê³µê²©ì´ ì‹¤í–‰ë¨"), *AttackTypeTag.ToString()),  // ë¬¸ìì—´ í¬ë§·
+					true,  
+					true,  
 					FLinearColor::Green,
-					2.0f    // Ç¥½Ã ½Ã°£
+					2.0f    
 				);
 
 				AnimInstance->Montage_Play(Montage);
@@ -352,29 +394,29 @@ void AMonsterCharacter::SelectVertices(int32 LODIndex)
 		return;
 	}
 
-	// SkeletalMesh¸¦ °¡Á®¿Â´Ù.
+	// SkeletalMeshë¥¼ ê°€ì ¸ì˜¨ë‹¤.
 	USkeletalMesh* SkeletalMesh = GetMesh()->GetSkeletalMeshAsset();
 	if (!SkeletalMesh) {
 		UE_LOG(LogTemp, Warning, TEXT("CopySkeletalMeshToProcedural: SkeletalMesh is null."));
 		return;
 	}
 
-	//GetResourceForRendering - Skeletal MeshÀÇ ·»´õ¸µ µ¥ÀÌÅÍ¸¦ °¡Á®¿À´Â ÇÔ¼ö
+	//GetResourceForRendering - Skeletal Meshì˜ ë Œë”ë§ ë°ì´í„°ë¥¼ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜
 	const FSkeletalMeshRenderData* RenderData = SkeletalMesh->GetResourceForRendering();
 	if (!RenderData || !RenderData->LODRenderData.IsValidIndex(LODIndex)) {
 		UE_LOG(LogTemp, Warning, TEXT("CopySkeletalMeshToProcedural: LODRenderData[%d] is not valid."), LODIndex);
 		return;
 	}
-	//vertexÀÇ ÃÑ °³¼ö¸¦ µé°í¿Â´Ù.
+	//vertexì˜ ì´ ê°œìˆ˜ë¥¼ ë“¤ê³ ì˜¨ë‹¤.
 	NumVertices = RenderData->LODRenderData[LODIndex].GetNumVertices();
 
-	//SkeletalMesh¿¡¼­ LODRenderData¸¦ °¡Á®¿Â´Ù.LODRenderData´Â ¹öÅØ½º µ¥ÀÌÅÍ, ÀÎµ¦½º µ¥ÀÌÅÍ, ¼½¼Ç Á¤º¸ µîÀÌ Æ÷ÇÔ
-	//FSkeletalMeshLODRenderData¶õ LODÀÇ Mesh µ¥ÀÌÅÍ¸¦ °¡Áö°í ÀÖ´Â ±¸Á¶Ã¼ÀÌ´Ù.
+	//SkeletalMeshì—ì„œ LODRenderDataë¥¼ ê°€ì ¸ì˜¨ë‹¤.LODRenderDataëŠ” ë²„í…ìŠ¤ ë°ì´í„°, ì¸ë±ìŠ¤ ë°ì´í„°, ì„¹ì…˜ ì •ë³´ ë“±ì´ í¬í•¨
+	//FSkeletalMeshLODRenderDataë€ LODì˜ Mesh ë°ì´í„°ë¥¼ ê°€ì§€ê³  ìˆëŠ” êµ¬ì¡°ì²´ì´ë‹¤.
 	const FSkeletalMeshLODRenderData& LODRenderData = RenderData->LODRenderData[LODIndex];
-	//SkinWeightVertexBuffer¸¦ °¡Á®¿Â´Ù. -> vertex°¡ ¾î¶² Bone¿¡ ¿µÇâÀ» ¹Ş´ÂÁö ÀúÀåÇÏ´Â µ¥ÀÌÅÍÀÌ¸ç Animation¿¡¼­ »ç¿ë ¿¹Á¤
+	//SkinWeightVertexBufferë¥¼ ê°€ì ¸ì˜¨ë‹¤. -> vertexê°€ ì–´ë–¤ Boneì— ì˜í–¥ì„ ë°›ëŠ”ì§€ ì €ì¥í•˜ëŠ” ë°ì´í„°ì´ë©° Animationì—ì„œ ì‚¬ìš© ì˜ˆì •
 	const FSkinWeightVertexBuffer& SkinWeights = LODRenderData.SkinWeightVertexBuffer;
 
-	//À§Ä¡¸¦ µé°í¿Â´Ù.
+	//ìœ„ì¹˜ë¥¼ ë“¤ê³ ì˜¨ë‹¤.
 	FTransform MeshTransform = GetMesh()->GetComponentTransform();
 	FVector TargetBoneLocation = GetMesh()->GetBoneLocation(TargetBoneName);
 
@@ -386,30 +428,30 @@ void AMonsterCharacter::SelectVertices(int32 LODIndex)
 
 	int32 vertexCounter = 0;
 	for (const FSkelMeshRenderSection& Section : LODRenderData.RenderSections) {
-		//NumVertices - ÇØ´ç SectionÀÇ Vertex ¼ö, BaseVertexIndex - ÇØ´ç SectionÀÇ ½ÃÀÛ Vertex Index
+		//NumVertices - í•´ë‹¹ Sectionì˜ Vertex ìˆ˜, BaseVertexIndex - í•´ë‹¹ Sectionì˜ ì‹œì‘ Vertex Index
 		const int32 NumSourceVertices = Section.NumVertices;
 		const int32 BaseVertexIndex = Section.BaseVertexIndex;
 
 		for (int32 i = 0; i < NumSourceVertices; i++) {
 			const int32 VertexIndex = i + BaseVertexIndex;
 
-			//vertexÀÇ À§Ä¡¸¦ °¡Á®¿Â´Ù. -> LODRenderData.StaticVertexBuffers.PositionVertexBuffer(ÇöÀç LODÀÇ Vertex À§Ä¡ µ¥ÀÌÅÍ¸¦ ÀúÀåÇÏ´Â ¹öÆÛ)
-			//.VertexPosition(VertexIndex)-> VertexIndexÀÇ À§Ä¡¸¦ °¡Á®¿Â´Ù. ¹İÈ¯ Å¸ÀÔÀÌ FVector3fÀÌ´Ù.
-			const FVector3f SkinnedVectorPos = LODRenderData.StaticVertexBuffers.PositionVertexBuffer.VertexPosition(VertexIndex);		//·ÎÄÃ ÁÂÇ¥ ¹İÈ¯
-			FVector WorldVertexPosition = MeshTransform.TransformPosition(FVector(SkinnedVectorPos)); // FVector3f -> FVector º¯È¯ & ·ÎÄÃ -> ¿ùµå ÁÂÇ¥
+			//vertexì˜ ìœ„ì¹˜ë¥¼ ê°€ì ¸ì˜¨ë‹¤. -> LODRenderData.StaticVertexBuffers.PositionVertexBuffer(í˜„ì¬ LODì˜ Vertex ìœ„ì¹˜ ë°ì´í„°ë¥¼ ì €ì¥í•˜ëŠ” ë²„í¼)
+			//.VertexPosition(VertexIndex)-> VertexIndexì˜ ìœ„ì¹˜ë¥¼ ê°€ì ¸ì˜¨ë‹¤. ë°˜í™˜ íƒ€ì…ì´ FVector3fì´ë‹¤.
+			const FVector3f SkinnedVectorPos = LODRenderData.StaticVertexBuffers.PositionVertexBuffer.VertexPosition(VertexIndex);		//ë¡œì»¬ ì¢Œí‘œ ë°˜í™˜
+			FVector WorldVertexPosition = MeshTransform.TransformPosition(FVector(SkinnedVectorPos)); // FVector3f -> FVector ë³€í™˜ & ë¡œì»¬ -> ì›”ë“œ ì¢Œí‘œ
 			//UE_LOG(LogTemp, Display, TEXT("WorldVertexPosition : %s"), *WorldVertexPosition.ToString());
 			float DistanceToBone = FVector::Dist(WorldVertexPosition, TargetBoneLocation);
 
-			////TargetBoneLocationÀ» ±âÁØÀ¸·Î ÀÏÁ¤ °Å¸® ³»¿¡ ÀÖ´Â Vertex¸¸ Ãß°¡ÇØ¼­ Procedural Mesh »ı¼º
+			////TargetBoneLocationì„ ê¸°ì¤€ìœ¼ë¡œ ì¼ì • ê±°ë¦¬ ë‚´ì— ìˆëŠ” Vertexë§Œ ì¶”ê°€í•´ì„œ Procedural Mesh ìƒì„±
 			if (DistanceToBone <= CreateProceduralMeshDistance)
 			{
-				// À§Ä¡ Á¤º¸ Ãß°¡
+				// ìœ„ì¹˜ ì •ë³´ ì¶”ê°€
 				FVector LocalVertexPosition = FVector(SkinnedVectorPos);
 				VertexIndexMap.Add(VertexIndex, vertexCounter);
-				//WorldVertexPositionÀ» »ç¿ëÇÏ¸é ´Ù¸¥ À§Ä¡¿¡ Procedural Mesh°¡ »ı¼ºµÈ´Ù.
+				//WorldVertexPositionì„ ì‚¬ìš©í•˜ë©´ ë‹¤ë¥¸ ìœ„ì¹˜ì— Procedural Meshê°€ ìƒì„±ëœë‹¤.
 				FilteredVerticesArray.Add(LocalVertexPosition);
 				vertexCounter += 1;
-				// ³ë¸Ö(Normal), ÅºÁ¨Æ®(Tangent) Ãß°¡
+				// ë…¸ë©€(Normal), íƒ„ì  íŠ¸(Tangent) ì¶”ê°€
 				const FVector3f Normal = LODRenderData.StaticVertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(VertexIndex);
 				const FVector3f TangentX = LODRenderData.StaticVertexBuffers.StaticMeshVertexBuffer.VertexTangentX(VertexIndex);
 				const FVector2f SourceUVs = LODRenderData.StaticVertexBuffers.StaticMeshVertexBuffer.GetVertexUV(VertexIndex, 0);
@@ -423,24 +465,24 @@ void AMonsterCharacter::SelectVertices(int32 LODIndex)
 	}
 
 	//UE_LOG(LogTemp, Display, TEXT("VertexIndexMan Count : %d"), VertexIndexMap.Num());
-	//LODRenderData.MultiSizeIndexContainer.GetIndexBuffer()´Â ¿ø·¡ Skeletal MeshÀÇ °¢ vertex°¡ ¾î¶»°Ô »ï°¢ÇüÀ¸·Î ±¸¼ºµÇ¾îÀÖ¾ú´ÂÁö¸¦ µé°í¿Â´Ù.
+	//LODRenderData.MultiSizeIndexContainer.GetIndexBuffer()ëŠ” ì›ë˜ Skeletal Meshì˜ ê° vertexê°€ ì–´ë–»ê²Œ ì‚¼ê°í˜•ìœ¼ë¡œ êµ¬ì„±ë˜ì–´ìˆì—ˆëŠ”ì§€ë¥¼ ë“¤ê³ ì˜¨ë‹¤.
 	const FRawStaticIndexBuffer16or32Interface* IndexBuffer = LODRenderData.MultiSizeIndexContainer.GetIndexBuffer();
 	if (!IndexBuffer) {
 		UE_LOG(LogTemp, Warning, TEXT("CopySkeletalMeshToProcedural: Index buffer is null."));
 		return;
 	}
 
-	//ÇöÀç LODÀÇ ÃÑ Index ¼ö¸¦ °¡Á®¿Â´Ù.
+	//í˜„ì¬ LODì˜ ì´ Index ìˆ˜ë¥¼ ê°€ì ¸ì˜¨ë‹¤.
 	const int32 NumIndices = IndexBuffer->Num();
-	Indices.SetNum(NumIndices); // ¸ğµç °ªÀ» 0À¸·Î ÃÊ±âÈ­ÇÏ¸ç ¸Ş¸ğ¸® °ø°£ È®º¸º¸
+	Indices.SetNum(NumIndices); // ëª¨ë“  ê°’ì„ 0ìœ¼ë¡œ ì´ˆê¸°í™”í•˜ë©° ë©”ëª¨ë¦¬ ê³µê°„ í™•ë³´ë³´
 	for (int32 i = 0; i < NumIndices; i += 3) {
-		//IndexBuffer Get(i) - ÇöÀç Ã³¸® ÁßÀÎ »ï°¢ÇüÀ» ±¸¼ºÇÏ´Â ¹öÅØ½º ÀÎµ¦½º¸¦ °¡Á®¿È.
-		//VertexIndex : Get(0) = a, Get(1) = b, Get(2) = c·Î abc»ï°¢Çü, Get(3) = c, Get(4) = d, Get(5) = a·Î cda»ï°¢Çü (¿©±â¼­ abcd´Â FVectorÀ§Ä¡¶ó°í Ãë±Ş)
-		//Áï, Ã¹ BaseVertexIndex¿¡¼­ ±×·ÁÁö´Â »ï°¢ÇüºÎÅÍ ¼ø¼­´ë·Î »ï°¢ÇüÀÌ ±×·ÁÁö´Â vertexÀÇ Index¸¦ °¡Á®¿Â´Ù.
-		//°á°úÀûÀ¸·Î Indices¸¦ ¼øÈ¯ÇÏ¸é 3°³¾¿ ¹­¾î¼­ »ï°¢ÇüÀ» ±×¸± ¼ö ÀÖ´Ù.
-		//uint32°¡ ¹İÈ¯µÇ¾î int32·Î Casting, µ¥ÀÌÅÍ ÀÏ°ü¼ºÀ» À§ÇØ CastingÇÑ´Ù.
+		//IndexBuffer Get(i) - í˜„ì¬ ì²˜ë¦¬ ì¤‘ì¸ ì‚¼ê°í˜•ì„ êµ¬ì„±í•˜ëŠ” ë²„í…ìŠ¤ ì¸ë±ìŠ¤ë¥¼ ê°€ì ¸ì˜´.
+		//VertexIndex : Get(0) = a, Get(1) = b, Get(2) = cë¡œ abcì‚¼ê°í˜•, Get(3) = c, Get(4) = d, Get(5) = aë¡œ cdaì‚¼ê°í˜• (ì—¬ê¸°ì„œ abcdëŠ” FVectorìœ„ì¹˜ë¼ê³  ì·¨ê¸‰)
+		//ì¦‰, ì²« BaseVertexIndexì—ì„œ ê·¸ë ¤ì§€ëŠ” ì‚¼ê°í˜•ë¶€í„° ìˆœì„œëŒ€ë¡œ ì‚¼ê°í˜•ì´ ê·¸ë ¤ì§€ëŠ” vertexì˜ Indexë¥¼ ê°€ì ¸ì˜¨ë‹¤.
+		//ê²°ê³¼ì ìœ¼ë¡œ Indicesë¥¼ ìˆœí™˜í•˜ë©´ 3ê°œì”© ë¬¶ì–´ì„œ ì‚¼ê°í˜•ì„ ê·¸ë¦´ ìˆ˜ ìˆë‹¤.
+		//uint32ê°€ ë°˜í™˜ë˜ì–´ int32ë¡œ Casting, ë°ì´í„° ì¼ê´€ì„±ì„ ìœ„í•´ Castingí•œë‹¤.
 		//Indices[i] = static_cast<int32>(IndexBuffer->Get(i));
-		//¾Æ·¡ ÄÚµå´Â 3°¢ÇüÀ» ÀÌ·ç´Â 3°³ÀÇ i¸¦ µé°í¿À´Â °ÍÀÌ´Ù.
+		//ì•„ë˜ ì½”ë“œëŠ” 3ê°í˜•ì„ ì´ë£¨ëŠ” 3ê°œì˜ ië¥¼ ë“¤ê³ ì˜¤ëŠ” ê²ƒì´ë‹¤.
 		int32 OldIndex0 = static_cast<int32>(IndexBuffer->Get(i));
 		int32 OldIndex1 = static_cast<int32>(IndexBuffer->Get(i + 1));
 		int32 OldIndex2 = static_cast<int32>(IndexBuffer->Get(i + 2));
@@ -448,10 +490,10 @@ void AMonsterCharacter::SelectVertices(int32 LODIndex)
 		int32 NewIndex0 = VertexIndexMap.Contains(OldIndex0) ? VertexIndexMap[OldIndex0] : -1;
 		int32 NewIndex1 = VertexIndexMap.Contains(OldIndex1) ? VertexIndexMap[OldIndex1] : -1;
 		int32 NewIndex2 = VertexIndexMap.Contains(OldIndex2) ? VertexIndexMap[OldIndex2] : -1;
-		// ±âÁ¸ VertexIndex°¡ NewVertexIndex¿¡ Æ÷ÇÔµÈ °æ¿ì¸¸ Ãß°¡ - ½ÇÁ¦·Î ³»°¡ vertex ¼öÁıÇÑ °÷¿¡ ÀÖ´Â IndexÀÎÁö È®ÀÎÇÑ´Ù.
-		//NewIndex >= FilteredVerticesArray.Num() - VertexIndexMapÀÌ Àß¸øµÈ °ªÀ» ¹İÈ¯ÇÏ°Å³ª, Indices ¹è¿­¿¡ À¯È¿ÇÏÁö ¾ÊÀº ÀÎµ¦½º°¡ Ãß°¡µÉ ¶§ ¹ß»ı
+		// ê¸°ì¡´ VertexIndexê°€ NewVertexIndexì— í¬í•¨ëœ ê²½ìš°ë§Œ ì¶”ê°€ - ì‹¤ì œë¡œ ë‚´ê°€ vertex ìˆ˜ì§‘í•œ ê³³ì— ìˆëŠ” Indexì¸ì§€ í™•ì¸í•œë‹¤.
+		//NewIndex >= FilteredVerticesArray.Num() - VertexIndexMapì´ ì˜ëª»ëœ ê°’ì„ ë°˜í™˜í•˜ê±°ë‚˜, Indices ë°°ì—´ì— ìœ íš¨í•˜ì§€ ì•Šì€ ì¸ë±ìŠ¤ê°€ ì¶”ê°€ë  ë•Œ ë°œìƒ
 		if (NewIndex0 < 0 || NewIndex0 >= FilteredVerticesArray.Num() || NewIndex1 < 0 || NewIndex1 >= FilteredVerticesArray.Num() || NewIndex2 < 0 || NewIndex2 >= FilteredVerticesArray.Num()) {
-			//UE_LOG(LogTemp, Warning, TEXT("Skipping triangle due to invalid indices: (%d, %d, %d) ¡æ (%d, %d, %d)"),	OldIndex0, OldIndex1, OldIndex2, NewIndex0, NewIndex1, NewIndex2);
+			//UE_LOG(LogTemp, Warning, TEXT("Skipping triangle due to invalid indices: (%d, %d, %d) â†’ (%d, %d, %d)"),	OldIndex0, OldIndex1, OldIndex2, NewIndex0, NewIndex1, NewIndex2);
 		}
 		else {
 			Indices.Add(NewIndex0);
@@ -462,8 +504,8 @@ void AMonsterCharacter::SelectVertices(int32 LODIndex)
 
 	//
 	// for (int32 i = 0; i < FilteredVerticesArray.Num(); i++) {
-	// 	// Àß¸° ºÎºĞÀÇ ¹öÅØ½º¸¦ Black(0, 0, 0)À¸·Î ¼³Á¤
-	// 	VertexColors.Add(FColor(0, 0, 0, 0));  // ¾ËÆÄ °ª Æ÷ÇÔ
+	// 	// ì˜ë¦° ë¶€ë¶„ì˜ ë²„í…ìŠ¤ë¥¼ Black(0, 0, 0)ìœ¼ë¡œ ì„¤ì •
+	// 	VertexColors.Add(FColor(0, 0, 0, 0));  // ì•ŒíŒŒ ê°’ í¬í•¨
 	// }
 }
 
@@ -472,19 +514,19 @@ void AMonsterCharacter::ApplyVertexAlphaToSkeletalMesh()
 	if (!GetMesh() || !GetMesh()->GetSkeletalMeshAsset()) return;
 
 	TArray<FLinearColor> LinearVertexColors;
-	LinearVertexColors.Init(FLinearColor(1, 1, 1, 1), NumVertices); // Èò»ö(º¸ÀÓ)
+	LinearVertexColors.Init(FLinearColor(1, 1, 1, 1), NumVertices); // í°ìƒ‰(ë³´ì„)
 
-	// VertexIndexMapÀ» È°¿ëÇØ Àß¸° ºÎºĞ¸¸ »ö»óÀ» º¯°æ
+	// VertexIndexMapì„ í™œìš©í•´ ì˜ë¦° ë¶€ë¶„ë§Œ ìƒ‰ìƒì„ ë³€ê²½
 	for (const TPair<int32, int32>& Pair : VertexIndexMap) {
-		int32 ColorChangeIndex = Pair.Key;  // ¿øº» Skeletal MeshÀÇ ¹öÅØ½º ÀÎµ¦½º
-		if (ColorChangeIndex >= 0) {		//Àß¸øµÈ Index ¹æÁö.
-			LinearVertexColors[ColorChangeIndex] = FLinearColor(0, 0, 0, 0);  // °ËÀº»ö = ¸¶½ºÅ· Ã³¸®
+		int32 ColorChangeIndex = Pair.Key;  // ì›ë³¸ Skeletal Meshì˜ ë²„í…ìŠ¤ ì¸ë±ìŠ¤
+		if (ColorChangeIndex >= 0) {		//ì˜ëª»ëœ Index ë°©ì§€.
+			LinearVertexColors[ColorChangeIndex] = FLinearColor(0, 0, 0, 0);  // ê²€ì€ìƒ‰ = ë§ˆìŠ¤í‚¹ ì²˜ë¦¬
 		}
 	}
 
-	// Skeletal Mesh¿¡ ¹öÅØ½º ÄÃ·¯ Àû¿ë
+	// Skeletal Meshì— ë²„í…ìŠ¤ ì»¬ëŸ¬ ì ìš©
 	GetMesh()->SetVertexColorOverride_LinearColor(0, LinearVertexColors);
-	GetMesh()->MarkRenderStateDirty(); // ·»´õ »óÅÂ °»½Å
+	GetMesh()->MarkRenderStateDirty(); // ë Œë” ìƒíƒœ ê°±ì‹ 
 }
 
 void AMonsterCharacter::CopySkeletalMeshToProcedural(int32 LODIndex)
@@ -494,16 +536,16 @@ void AMonsterCharacter::CopySkeletalMeshToProcedural(int32 LODIndex)
 		return;
 	}
 
-	//Skeletal MeshÀÇ Location°ú RotationÀ» µé°í¿Â´Ù.
+	//Skeletal Meshì˜ Locationê³¼ Rotationì„ ë“¤ê³ ì˜¨ë‹¤.
 	FVector MeshLocation = GetMesh()->GetComponentLocation() + GetMesh()->GetRightVector() * 200.f;
 	FRotator MeshRotation = GetMesh()->GetComponentRotation();
 
-	//Skeletal MeshÀÇ Location°ú RotationÀ» Procedural Mesh¿¡ Àû¿ëÇÑ´Ù.
+	//Skeletal Meshì˜ Locationê³¼ Rotationì„ Procedural Meshì— ì ìš©í•œë‹¤.
 	ProcMeshComponent->SetWorldLocation(MeshLocation);
 	ProcMeshComponent->SetWorldRotation(MeshRotation);
 
-	//Section Index - ¾î¶² SectionºÎÅÍ ½ÃÀÛÇÏ´Â°¡?, Vertices - ¾î¶² vertex¸¦ »ç¿ëÇÏ´Â°¡?
-	//Indices - ¾î¶² »ï°¢Çü ±¸Á¶¸¦ »ç¿ëÇÏ´Â°¡?, Normals, UV, Colors, Tangents, bCreateCollision - Ãæµ¹ È°¼ºÈ­
+	//Section Index - ì–´ë–¤ Sectionë¶€í„° ì‹œì‘í•˜ëŠ”ê°€?, Vertices - ì–´ë–¤ vertexë¥¼ ì‚¬ìš©í•˜ëŠ”ê°€?
+	//Indices - ì–´ë–¤ ì‚¼ê°í˜• êµ¬ì¡°ë¥¼ ì‚¬ìš©í•˜ëŠ”ê°€?, Normals, UV, Colors, Tangents, bCreateCollision - ì¶©ëŒ í™œì„±í™”
 
 	ProcMeshComponent->CreateMeshSection(0, FilteredVerticesArray, Indices, Normals, UV, VertexColors, Tangents, true);
 	UMaterialInterface* SkeletalMeshMaterial = GetMesh()->GetMaterial(0);
@@ -532,7 +574,7 @@ void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHa
 		UE_LOG(LogTemp, Warning, TEXT("SliceMeshAtBone: Procedural mesh has no material assigned."));
 	}
 
-	UProceduralMeshComponent* OtherHalfMesh = nullptr;		//Àß¸° Procedural Mesh°¡ OtherHalfMesh°¡ µÈ´Ù.
+	UProceduralMeshComponent* OtherHalfMesh = nullptr;		//ì˜ë¦° Procedural Meshê°€ OtherHalfMeshê°€ ëœë‹¤.
 	UKismetProceduralMeshLibrary::SliceProceduralMesh(
 		ProcMeshComponent,
 		BoneLocation,
@@ -540,7 +582,7 @@ void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHa
 		bCreateOtherHalf,
 		OtherHalfMesh,
 		EProcMeshSliceCapOption::CreateNewSectionForCap,
-		CapMaterial                           //Àı´Ü¸é Material
+		CapMaterial                           //ì ˆë‹¨ë©´ Material
 	);
 
 	if (!OtherHalfMesh) {
@@ -555,18 +597,18 @@ void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHa
 	OtherHalfMesh->SetSimulatePhysics(false);
 	UE_LOG(LogTemp, Display, TEXT("Physic Disable"));
 
-	//Procedural Mesh¸¦ Æ¯Á¤ Socket¿¡ Attach
+	//Procedural Meshë¥¼ íŠ¹ì • Socketì— Attach
 	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
 	ProcMeshComponent->AttachToComponent(GetMesh(), TransformRules, ProceduralMeshAttachSocketName);
 	OtherHalfMesh->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
 
-	//Ragdoll Àû¿ë & Bone ÀÚ¸§.
+	//Ragdoll ì ìš© & Bone ìë¦„.
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 	GetMesh()->BreakConstraint(FVector(1000.f, 1000.f, 1000.f), FVector::ZeroVector, TargetBoneName);
 	GetMesh()->SetSimulatePhysics(true);
 
-	//Procedural Mesh¿¡ ¹°¸® Àû¿ë
-	//ProcMeshComponent->SetSimulatePhysics(true); //-> true ½Ã µû·Î ¿òÁ÷ÀÎ´Ù.
+	//Procedural Meshì— ë¬¼ë¦¬ ì ìš©
+	//ProcMeshComponent->SetSimulatePhysics(true); //-> true ì‹œ ë”°ë¡œ ì›€ì§ì¸ë‹¤.
 	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
@@ -582,7 +624,7 @@ USBCombatComponent* AMonsterCharacter::GetCombatComponent()
 
 void AMonsterCharacter::SetCombatEnabled(const bool bEnabled)
 {
-	CombatComponent->SetCombatEnabled(true);
+	CombatComponent->SetCombatEnabled(bEnabled);
 }
 
 bool AMonsterCharacter::IsHaveBlinkAttack() const

@@ -30,6 +30,9 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
     FVector2D AdditionalMoveDirection = FVector2D::ZeroVector;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
+    bool isLookingPlayer = true;
+
 protected:
     FVector StartLocation = FVector::ZeroVector;
 

@@ -7,6 +7,7 @@
 
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "AI/MonsterAIController.h"
 
 void UAnimNotifyState_MovePosition::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
@@ -19,6 +20,11 @@ void UAnimNotifyState_MovePosition::NotifyBegin(USkeletalMeshComponent* MeshComp
         StartLocation = Character->GetActorLocation();
         ElapsedTime = 0.f;
         MoveDuration = TotalDuration;
+
+        if (AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(Character->GetController()))
+        {
+            MonsterAIController->SetIsLookingPlayer(isLookingPlayer);
+        }
     }
 }
 
@@ -66,4 +72,12 @@ void UAnimNotifyState_MovePosition::NotifyTick(USkeletalMeshComponent* MeshComp,
 void UAnimNotifyState_MovePosition::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
     Super::NotifyEnd(MeshComp, Animation, EventReference);
+
+    if (ACharacter* Character = Cast<ACharacter>(MeshComp->GetOwner()))
+    {
+        if (AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(Character->GetController()))
+        {
+            MonsterAIController->SetIsLookingPlayer(false);
+        }
+    }
 }

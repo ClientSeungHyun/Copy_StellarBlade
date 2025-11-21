@@ -7,6 +7,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Animation/Monster_AnimInstance.h"
 #include "Character/Monster/MonsterCharacter.h"
+#include "AI/MonsterAIController.h"
 
 EBTNodeResult::Type UBTTaskNode_HarassMove::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -45,6 +46,11 @@ EBTNodeResult::Type UBTTaskNode_HarassMove::ExecuteTask(UBehaviorTreeComponent& 
         }
     }
 
+    if (AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(AIController))
+    {
+        MonsterAIController->SetIsLookingPlayer(true);
+    }
+
     return EBTNodeResult::Succeeded;
 }
 
@@ -59,6 +65,11 @@ EBTNodeResult::Type UBTTaskNode_HarassMove::AbortTask(UBehaviorTreeComponent& Ow
         {
             AnimInstance->SetIsHarassing(false);
         }
+    }
+
+    if (AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(AIController))
+    {
+        MonsterAIController->SetIsLookingPlayer(false);
     }
 
     return EBTNodeResult::Succeeded;

@@ -4,6 +4,9 @@
 #include "Animation/AnimNotifyState_MonsterBlinkAttack.h"
 
 #include "Character/Monster/MonsterCharacter.h"
+#include "AI/MonsterAIController.h"
+
+#include "Kismet/KismetSystemLibrary.h"
 
 UAnimNotifyState_MonsterBlinkAttack::UAnimNotifyState_MonsterBlinkAttack(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer)
@@ -17,6 +20,20 @@ void UAnimNotifyState_MonsterBlinkAttack::NotifyBegin(USkeletalMeshComponent* Me
 	if (AMonsterCharacter* OwnerMonster = Cast<AMonsterCharacter>(MeshComp->GetOwner()))
 	{
 		OwnerMonster->SetAllowCounterAttack_Blink(true);
+
+		if (AMonsterAIController* MonsterAIController = Cast<AMonsterAIController>(OwnerMonster->GetController()))
+		{
+			MonsterAIController->SetIsLookingPlayer(false);
+		}
+
+		UKismetSystemLibrary::PrintString(
+			this,
+			FString::Printf(TEXT("지금이야!")),
+			true,
+			true,
+			FLinearColor::Green,
+			2.0f
+		);
 	}
 }
 

@@ -18,7 +18,7 @@ class COPY_STELLARBLADE_API UTargetingComponent : public UActorComponent
 protected:
 	/** LockOn 시킬 후보군을 감지할 영역의 크기(반지름) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float TargetingRadius = 1000.f;
+	float TargetingRadius = 3000.f;
 
 	/** LockOn시 카메라 회전 속도 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

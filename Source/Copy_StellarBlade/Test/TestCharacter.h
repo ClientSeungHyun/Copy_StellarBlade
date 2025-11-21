@@ -75,4 +75,12 @@ public:
 
 	//void CreateProceduralMesh();
 
+
+public:
+	//void SliceMesh();
+	//USkeletalMesh* BuildVertexToSkeletalMesh(const TSet<uint32>& Indices, const FName& AssetNameTag) const;
+	//void SplitVerticesByPlane(const FPlane& SlicePlane,
+	//	TSet<uint32>& OutPositiveVertexIndices,
+	//	TSet<uint32>& OutNegativeVertexIndices,
+	//	TSet<uint32>& OutIntersectingVertexIndices) const;
 };

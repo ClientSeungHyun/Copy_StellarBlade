@@ -7,6 +7,7 @@
 #include "Character/Monster/MonsterCharacter.h"
 #include "Equipments/SBWeapon.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "AI/MonsterAIController.h"
 
 bool UBTDecorator_MonsterBlinkAttack::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
 {

@@ -52,9 +52,11 @@ void AMonsterAIController::Tick(float DeltaTime)
 		FVector Direction = (TargetActor->GetActorLocation() - ControlledEnemy->GetActorLocation()).GetSafeNormal2D();
 		FRotator TargetRotation = Direction.Rotation();
 
-		// 부드럽게 회전
-		FRotator NewRotation = FMath::RInterpTo(ControlledEnemy->GetActorRotation(), TargetRotation, DeltaTime, 5.0f);
-		ControlledEnemy->SetActorRotation(NewRotation);
+		if (bIsLookingPlayer)
+		{
+			FRotator NewRotation = FMath::RInterpTo(ControlledEnemy->GetActorRotation(), TargetRotation, DeltaTime, 3.0f);
+			ControlledEnemy->SetActorRotation(NewRotation);
+		}
 	}
 
 	if (BlackboardComp->GetValueAsEnum("Behavior") == (uint8)EMonsterAIBehavior::Attack
@@ -169,4 +171,9 @@ void AMonsterAIController::OnBattleStartMontageEnded(UAnimMontage* Montage, bool
 			Monster->SetCombatEnabled(true);
 		}
 	}
+}
+
+void AMonsterAIController::SetIsLookingPlayer(bool InIsLookingTarget)
+{
+	bIsLookingPlayer = InIsLookingTarget;
 }
