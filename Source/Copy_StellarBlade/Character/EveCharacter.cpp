@@ -136,8 +136,8 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	//if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
 	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
-	//	//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
+		//UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
 	//}	
 }
 
