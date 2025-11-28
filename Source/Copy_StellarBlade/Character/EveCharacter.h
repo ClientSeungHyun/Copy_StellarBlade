@@ -107,6 +107,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASBEveWeapon> SwordClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	TSubclassOf<UCameraShakeBase> ShakeCamera;
 
 	UPROPERTY()
 	ASBEveWeapon* Sword;
@@ -150,6 +153,18 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Montage | Potion")
 	UAnimMontage* PotionAnim;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	TArray<USoundBase*> HitVoiceSoundList;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	TArray<USoundBase*> GuardSoundList;
+
+	UPROPERTY()
+	USoundBase* PerfectParrySound_01;	
+	
+	UPROPERTY()
+	USoundBase* PerfectParrySound_02;
 
 protected: //Combo System
 	//콤보 작동 중인지
@@ -283,9 +298,16 @@ protected:
 	void DoAttack(const FGameplayTag& AttackTypeTag);
 	void ExecuteComboAttack(const FGameplayTag& AttackTypeTag);
 
+	void PlayShakeCamera();
+	void ApplyHitLag(float HitLagDuration, float HitLagScale);
+	void PlayWorldSlowMotion(float SlowAmount, float Duration);
+
 	void HitReaction(const AActor* Attacker);
 	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
 
 	void TeleportBehindTarget(AActor* TargetActor, float DistanceBehind);
 
+	void PlayHitVoiceSound();
+	void PlayGuardSound();
+	void PlayPerfectParrySound();
 };

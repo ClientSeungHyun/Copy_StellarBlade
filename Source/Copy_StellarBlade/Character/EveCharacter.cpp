@@ -58,6 +58,24 @@ AEveCharacter::AEveCharacter()
 	MovementComp = GetCharacterMovement();
 
 	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> ParrySoundObj1(
+		TEXT("/Game/Sound/Eve/PC_just_parry_3.PC_just_parry_3")
+	);
+
+	if (ParrySoundObj1.Succeeded())
+	{
+		PerfectParrySound_01 = ParrySoundObj1.Object;
+	}
+	
+	static ConstructorHelpers::FObjectFinder<USoundBase> ParrySoundObj2(
+		TEXT("/Game/Sound/Eve/PC_parry_electric_3.PC_parry_electric_3")
+	);
+
+	if (ParrySoundObj2.Succeeded())
+	{
+		PerfectParrySound_02 = ParrySoundObj2.Object;
+	}
 }
 
 void AEveCharacter::BeginPlay()
@@ -136,8 +154,8 @@ void AEveCharacter::Tick(float DeltaTime)
 
 	//if(StateComponent->GetCurrentState() != StateComponent->GetPreState())
 	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
-	//	//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
+		//UE_LOG(LogTemp, Warning, TEXT("Cur Tag: %s"), *StateComponent->GetCurrentState().ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), isJumping);
 	//}	
 }
 
@@ -198,6 +216,7 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 	if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_PerfectDodge)
 		return 0.f;
 
+	//퍼펙트 회피
 	if (bCanPerfectDodge && HitTime - DodgeStartTime <= PerfectDodgeTime)
 	{
 		PerfectDodge();
@@ -206,9 +225,11 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 
 	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 
+	//방어 or 맞을 때
 	if (AttributeComponent)
 	{
 		AttributeComponent->TakeDamageAmount(ActualDamage);
+		PlayShakeCamera();
 		HitReaction(this);
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
@@ -456,7 +477,7 @@ void AEveCharacter::EndGuard()
 
 void AEveCharacter::PerfectGuard()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"));
+	PlayWorldSlowMotion(0.3,0.1);
 	isPerfectGuarded = true;
 	AttributeComponent->AddBetaEnergy(10.f);
 }
@@ -464,6 +485,8 @@ void AEveCharacter::PerfectGuard()
 void AEveCharacter::PerfectDodge()
 {
 	StateComponent->SetState(SBEveTags::Eve_State_PerfectDodge);
+
+	PlayWorldSlowMotion(0.8, 1.0);
 
 	if (TargetingComponent->IsLockOn())
 	{
@@ -640,6 +663,53 @@ void AEveCharacter::ExecuteComboAttack(const FGameplayTag& AttackTypeTag)
 	}
 }
 
+void AEveCharacter::PlayShakeCamera()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return;
+
+	PC->PlayerCameraManager->StartCameraShake(ShakeCamera, 1.0f);
+}
+
+void AEveCharacter::ApplyHitLag(float HitLagDuration, float HitLagScale)
+{
+	// 전체 게임 시간 멈칫
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1f);
+
+	// 0.05초 후 원래 속도로 복귀
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(TimerHandle,
+		[this]()
+		{
+			UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+		},
+		0.05f,
+		false 
+	);
+}
+
+void AEveCharacter::PlayWorldSlowMotion(float SlowAmount, float Duration)
+{ // 슬로우 강도 보정 (0 ~ 1)
+	SlowAmount = FMath::Clamp(SlowAmount, 0.01f, 1.0f);
+
+	UE_LOG(LogTemp, Warning, TEXT("SlowMotion: Amount=%.2f, Duration=%.2f"), SlowAmount, Duration);
+
+	// 월드 슬로우 적용
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), SlowAmount);
+
+	// Duration 후 원상복구
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(
+		TimerHandle,
+		[this]()
+		{
+			UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+		},
+		Duration,
+		false
+	);
+}
+
 void AEveCharacter::HitReaction(const AActor* Attacker)
 {
 	float HitTime = GetWorld()->GetTimeSeconds();
@@ -647,8 +717,18 @@ void AEveCharacter::HitReaction(const AActor* Attacker)
 	//퍼팩트 패링(가드)
 	if (isGuarding && HitTime - GuardStartTime <= PerfectGuardTime)
 	{
+		PlayPerfectParrySound();
 		PerfectGuard();
 		return;
+	}
+	else if(isGuarding)
+	{
+		PlayGuardSound();
+		return;
+	}
+	else
+	{
+		PlayHitVoiceSound();
 	}
 
 	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
@@ -737,6 +817,59 @@ void AEveCharacter::TeleportBehindTarget(AActor* TargetActor, float DistanceBehi
 	SetActorLocationAndRotation(TeleportLocation, NewRotation, false, nullptr, ETeleportType::TeleportPhysics);
 
 	//UE_LOG(LogTemp, Warning, TEXT("상대 뒤 %.1fcm 위치로 순간이동!"), DistanceBehind);
+}
+
+void AEveCharacter::PlayHitVoiceSound()
+{
+	if (HitVoiceSoundList.Num() == 0) return;
+
+	// 랜덤 인덱스 뽑기
+	int32 RandomIndex = FMath::RandRange(0, HitVoiceSoundList.Num() - 1);
+
+	USoundBase* RandomSound = HitVoiceSoundList[RandomIndex];
+	if (RandomSound)
+	{
+		// 소리 재생
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			RandomSound,
+			GetActorLocation()
+		);
+	}
+}
+
+void AEveCharacter::PlayGuardSound()
+{
+	if (GuardSoundList.Num() == 0) return;
+
+	// 랜덤 인덱스 뽑기
+	int32 RandomIndex = FMath::RandRange(0, GuardSoundList.Num() - 1);
+
+	USoundBase* RandomSound = GuardSoundList[RandomIndex];
+	if (RandomSound)
+	{
+		// 소리 재생
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			RandomSound,
+			GetActorLocation()
+		);
+	}
+}
+
+void AEveCharacter::PlayPerfectParrySound()
+{
+	UGameplayStatics::PlaySoundAtLocation(
+		this,
+		PerfectParrySound_01,
+		GetActorLocation()
+	);
+
+	UGameplayStatics::PlaySoundAtLocation(
+		this,
+		PerfectParrySound_02,
+		GetActorLocation()
+	);
 }
 
 void AEveCharacter::Pressed_Shift()

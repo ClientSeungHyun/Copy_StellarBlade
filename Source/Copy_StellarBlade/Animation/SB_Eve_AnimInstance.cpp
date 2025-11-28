@@ -63,10 +63,17 @@ void USB_Eve_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     bPressing_D = Player->GetPressed_D();
     bIsLockOn = Player->IsLockOn();
 
+    UE_LOG(LogTemp, Warning, TEXT("isJump: %d"), bIsJumpingStart);
+
     if (IsAnyMontagePlaying() == false && bUsePotion)
     {
         bUsePotion = false;
         Cast<AEveCharacter>(GetOwningActor())->bUsePotion = false;
+    }
+
+    if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_Falling)
+    {
+        bIsJumpingStart = false;
     }
 
     if (PlayerStateComp->GetCurrentState() == SBEveTags::Eve_State_JumpStart)
