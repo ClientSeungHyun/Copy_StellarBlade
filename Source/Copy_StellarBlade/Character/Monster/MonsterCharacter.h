@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Interfaces/SBCombatInterface.h"
 #include "Interfaces/TargetingInterface.h"
+#include "Components/TimelineComponent.h"
 
 #include "ProceduralMeshComponent.h"
 #include "MonsterCharacter.generated.h"
@@ -115,6 +116,17 @@ protected:
 	TArray<FColor> VertexColors;
 	TArray<FColor> Colors;
 
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	FTimeline DissolveTimeline;
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	TObjectPtr<UCurveFloat> DissolveCurveFloat;
+
+	const float DissolveDelayTime = 5.f;
+	TArray<uint32> DynamicMaterailIndices;
+
 public:
 	AMonsterCharacter();
 
@@ -152,6 +164,12 @@ public:
 	void ApplyVertexAlphaToSkeletalMesh();
 	void CopySkeletalMeshToProcedural(int32 LODIndex);
 	void SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf);
+
+public:
+	UFUNCTION()
+	void UpdateDissolveProgress(const float InValue);
+
+	void StartDissolve();
 
 public:
 	FORCEINLINE ATargetPoint* GetPatrolPoint()

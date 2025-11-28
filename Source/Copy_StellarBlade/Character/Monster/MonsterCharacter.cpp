@@ -122,11 +122,34 @@ void AMonsterCharacter::BeginPlay()
 			}
 		}
 	}
+
+	if (DissolveCurveFloat)
+	{
+		FOnTimelineFloat TimelineProgress;
+		TimelineProgress.BindUFunction(this, FName("UpdateDissolveProgress"));
+		DissolveTimeline.AddInterpFloat(DissolveCurveFloat, TimelineProgress);
+	}
+
+	// 머티리얼
+	TArray<UMaterialInterface*> Materials = GetMesh()->GetMaterials();
+	uint32 MaterialIndex = 0;
+	for (UMaterialInterface* const Materail : Materials)
+	{
+		UMaterialInstanceDynamic* MaterialDynamic = UMaterialInstanceDynamic::Create(Materail, this);
+		if (MaterialDynamic)
+		{
+			GetMesh()->SetMaterial(MaterialIndex, MaterialDynamic);
+			DynamicMaterailIndices.Add(MaterialIndex);
+		}
+		++MaterialIndex;
+	}
 }
 
 void AMonsterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	DissolveTimeline.TickTimeline(DeltaTime);
 }
 
 float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -183,14 +206,25 @@ void AMonsterCharacter::OnDeath()
 		}
 	}
 
-	SelectVertices(0);
-	ApplyVertexAlphaToSkeletalMesh();
-	CopySkeletalMeshToProcedural(0);
-	FVector SliceNormal = FVector(0, 1, 0);  // Slice in the Z direction
-	SliceMeshAtBone(SliceNormal, true);
+	//SelectVertices(0);
+	//ApplyVertexAlphaToSkeletalMesh();
+	//CopySkeletalMeshToProcedural(0);
+	//FVector SliceNormal = FVector(0, 1, 0);  // Slice in the Z direction
+	//SliceMeshAtBone(SliceNormal, true);
 
 	if(CombatComponent)
 		CombatComponent->SetWeapon(NULL, false);
+
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetSimulatePhysics(true);
+
+	FTimerHandle DeadTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		DeadTimerHandle,
+		this,
+		&AMonsterCharacter::StartDissolve,
+		DissolveDelayTime,
+		false);
 }
 
 void AMonsterCharacter::ImpactEffect(const FVector& Location)
@@ -610,6 +644,28 @@ void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHa
 	//Procedural Mesh에 물리 적용
 	//ProcMeshComponent->SetSimulatePhysics(true); //-> true 시 따로 움직인다.
 	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+}
+
+void AMonsterCharacter::UpdateDissolveProgress(const float InValue)
+{
+	for (const auto& DynamicMaterialIndex : DynamicMaterailIndices)
+	{
+		UMaterialInstanceDynamic* DynamicMaterial =
+			Cast<UMaterialInstanceDynamic>(GetMesh()->GetMaterial(DynamicMaterialIndex));
+
+		DynamicMaterial->SetScalarParameterValue("DissolveParam", InValue);
+	}
+
+	if (InValue >= 1.f)
+	{
+		Destroy();
+	}
+}
+
+void AMonsterCharacter::StartDissolve()
+{
+	DissolveTimeline.PlayFromStart();
+	SetActorTickEnabled(true);
 }
 
 ASBWeapon* AMonsterCharacter::GetMainWeapon()
