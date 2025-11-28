@@ -27,6 +27,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USBWeaponCollisionComponent* WeaponCollision;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	TArray<USoundBase*> AttackSoundList;
+
 public:	
 	ASBEveWeapon();
 
@@ -61,6 +64,8 @@ public:
 
 	virtual void ActivateCollision();
 	virtual void DeactivateCollision();
+
+	void PlayAttackSound();
 
 	/** 무기의 Collision에 검출된 Actor에 Damage를 전달 */
 	void OnHitActor(const FHitResult& Hit);

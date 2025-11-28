@@ -154,6 +154,18 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | Potion")
 	UAnimMontage* PotionAnim;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	TArray<USoundBase*> HitVoiceSoundList;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	TArray<USoundBase*> GuardSoundList;
+
+	UPROPERTY()
+	USoundBase* PerfectParrySound_01;	
+	
+	UPROPERTY()
+	USoundBase* PerfectParrySound_02;
+
 protected: //Combo System
 	//콤보 작동 중인지
 	bool bComboSequenceRunning = false;
@@ -295,4 +307,7 @@ protected:
 
 	void TeleportBehindTarget(AActor* TargetActor, float DistanceBehind);
 
+	void PlayHitVoiceSound();
+	void PlayGuardSound();
+	void PlayPerfectParrySound();
 };

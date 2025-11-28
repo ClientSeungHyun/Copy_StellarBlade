@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Character/EveCharacter.h"
 #include "Components/SBEveAtrributeComponent.h"
+#include "Sound/SoundBase.h"
 
 // Sets default values
 ASBEveWeapon::ASBEveWeapon()
@@ -83,8 +84,29 @@ void ASBEveWeapon::DeactivateCollision()
 	WeaponCollision->TurnOffCollision();
 }
 
+void ASBEveWeapon::PlayAttackSound()
+{
+	if (AttackSoundList.Num() == 0) return;
+
+	// 랜덤 인덱스 뽑기
+	int32 RandomIndex = FMath::RandRange(0, AttackSoundList.Num() - 1);
+
+	USoundBase* RandomSound = AttackSoundList[RandomIndex];
+	if (RandomSound)
+	{
+		// 소리 재생
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			RandomSound,
+			GetActorLocation()
+		);
+	}
+}
+
 void ASBEveWeapon::OnHitActor(const FHitResult& Hit)
 {
+	PlayAttackSound();
+
 	AActor* TargetActor = Hit.GetActor();
 
 	// 데미지 방향
