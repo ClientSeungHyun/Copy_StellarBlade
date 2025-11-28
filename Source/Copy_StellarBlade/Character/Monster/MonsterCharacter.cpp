@@ -180,6 +180,25 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 		HitReaction(EventInstigator->GetPawn());
 	}
 
+	// Vertex Shake
+	//for (const auto& DynamicMaterialIndex : DynamicMaterailIndices)
+	//{
+	//	UMaterialInstanceDynamic* DynamicMaterial =
+	//		Cast<UMaterialInstanceDynamic>(GetMesh()->GetMaterial(DynamicMaterialIndex));
+
+	//	DynamicMaterial->SetVectorParameterValue("HitWorldPosition", ImpactPoint);
+	//	DynamicMaterial->SetVectorParameterValue("HitDirection", ShotDirection);
+	//	DynamicMaterial->SetScalarParameterValue("HitStrength", 1.0f);
+	//	DynamicMaterial->SetScalarParameterValue("HitTime", GetWorld()->GetTimeSeconds());
+	// 
+	// HitDirection = -ImpactNormal;
+	//  DynamicMaterial->SetVectorParameterValue("HitWorldPos", ImpactPoint);
+	//	DynamicMaterial->SetVectorParameterValue("HitDirection", HitDirection);
+	//	DynamicMaterial->SetScalarParameterValue("HitStrength", HitStrength);
+	//	DynamicMaterial->SetScalarParameterValue("HitRadius", HitRadius);
+	//}
+
+
 	return ActualDamage;
 }
 
