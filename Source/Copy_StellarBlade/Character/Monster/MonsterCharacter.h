@@ -127,6 +127,10 @@ protected:
 	const float DissolveDelayTime = 5.f;
 	TArray<uint32> DynamicMaterailIndices;
 
+protected:
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TArray<USoundBase*> MonsterGrowlSounds;
+
 public:
 	AMonsterCharacter();
 

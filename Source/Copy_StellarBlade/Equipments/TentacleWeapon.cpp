@@ -62,6 +62,7 @@ void ATentacleWeapon::EquipItem(bool isSubWeapon)
 		{
 			for (auto& WeaponCollision : WeaponCollisions)
 			{
+				WeaponCollision->SetOwnerWeaopon(this);
 				WeaponCollision->SetWeaponMesh(OwnerCharacter->GetMesh());
 				WeaponCollision->AddIgnoredActor(OwnerCharacter);
 			}

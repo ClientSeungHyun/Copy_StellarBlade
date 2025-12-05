@@ -40,6 +40,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TArray<USBWeaponCollisionComponent*> WeaponCollisions;
 
+	UPROPERTY()
+	TArray<AActor*> AlreadyHitActors;
+
 protected:
 	UPROPERTY()
 	USBCombatComponent* CombatComponent;
@@ -60,6 +63,8 @@ protected:
 public:
 	ASBWeapon();
 
+protected:
+	virtual void BeginPlay() override;
 
 public:
 	virtual void EquipItem(bool isSubWeapon = false) override;
@@ -80,6 +85,9 @@ public:
 public:
 	virtual void ActivateCollision();
 	virtual void DeactivateCollision();
+
+	void AddHitActor(AActor* HitActor);
+	bool CanHitActor(AActor* HitActor);
 
 public:
 	void ActivateWeapon();

@@ -2,6 +2,7 @@
 
 
 #include "Components/SBWeaponCollisionComponent.h"
+#include "Equipments/SBWeapon.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 USBWeaponCollisionComponent::USBWeaponCollisionComponent()
@@ -30,7 +31,9 @@ void USBWeaponCollisionComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void USBWeaponCollisionComponent::TurnOnCollision()
 {
-    AlreadyHitActors.Empty();
+    if (!OwnerWeapon)
+        AlreadyHitActors.Empty();
+
     bIsCollisionEnabled = true;
 }
 
@@ -42,6 +45,12 @@ void USBWeaponCollisionComponent::TurnOffCollision()
 void USBWeaponCollisionComponent::SetWeaponMesh(UPrimitiveComponent* MeshComponent)
 {
     WeaponMesh = MeshComponent;
+}
+
+void USBWeaponCollisionComponent::SetOwnerWeaopon(ASBWeapon* InOwnerWeapon)
+{
+    if(InOwnerWeapon)
+        OwnerWeapon = InOwnerWeapon;
 }
 
 void USBWeaponCollisionComponent::AddIgnoredActor(AActor* Actor)
@@ -65,9 +74,14 @@ void USBWeaponCollisionComponent::SetAttachmentType(EAttachmentType InAttachment
     AttachmentType = InAttachmentType;
 }
 
-bool USBWeaponCollisionComponent::CanHitActor(AActor* Actor) const
+bool USBWeaponCollisionComponent::CanHitActor(AActor* HitActor)
 {
-    return AlreadyHitActors.Contains(Actor) == false;
+    return AlreadyHitActors.Contains(HitActor) == false;
+}
+
+void USBWeaponCollisionComponent::AddHitActor(AActor* HitActor)
+{
+    AlreadyHitActors.Add(HitActor);
 }
 
 void USBWeaponCollisionComponent::CollisionTrace()
@@ -115,9 +129,19 @@ void USBWeaponCollisionComponent::CollisionTrace()
                 continue;
             }
 
-            if (CanHitActor(HitActor))
+            if (OwnerWeapon && OwnerWeapon->CanHitActor(HitActor))
             {
-                AlreadyHitActors.Add(HitActor);
+                OwnerWeapon->AddHitActor(HitActor);
+
+                // Call OnHitActor Broadcast
+                if (OnHitActor.IsBound())
+                {
+                    OnHitActor.Broadcast(Hit);
+                }
+            }
+            else if(CanHitActor(HitActor))
+            {
+                AddHitActor(HitActor);
 
                 // Call OnHitActor Broadcast
                 if (OnHitActor.IsBound())

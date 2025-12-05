@@ -389,6 +389,19 @@ void AMonsterCharacter::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnd
 	check(AttributeComponent)
 	check(CombatComponent)
 
+	if (MonsterGrowlSounds.Num() > 0)
+	{
+		USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+
+		int32 RandomIndex = FMath::RandRange(0, MonsterGrowlSounds.Num() - 1);
+		USoundBase* SelectedSound = nullptr;
+		if (MonsterGrowlSounds.IsValidIndex(RandomIndex))
+			SelectedSound = MonsterGrowlSounds[RandomIndex];
+
+		if(SelectedSound)
+			UGameplayStatics::PlaySoundAtLocation(SkeletalMeshComponent->GetWorld(), SelectedSound, SkeletalMeshComponent->GetComponentLocation());
+	}
+
 	if (const ASBWeapon* Weapon = CombatComponent->GetMainWeapon())
 	{
 		StateComponent->SetState(SBGameplayTags::Character_State_Attacking);
@@ -677,6 +690,19 @@ void AMonsterCharacter::UpdateDissolveProgress(const float InValue)
 
 	if (InValue >= 1.f)
 	{
+		AAIController* AI = Cast<AAIController>(GetController());
+		if (AI && AI->BrainComponent)
+		{
+			AI->BrainComponent->StopLogic(TEXT("Enemy Died"));
+		}
+
+		if (AI)
+		{
+			AI->UnPossess();
+			AI->Destroy();
+		}
+
+		// 몬스터 삭제
 		Destroy();
 	}
 }

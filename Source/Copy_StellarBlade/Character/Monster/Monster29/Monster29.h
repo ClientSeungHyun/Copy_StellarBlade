@@ -32,6 +32,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster29|Body")
 	USkeletalMesh* LowerBodyMesh;
 
+protected:
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void BeginPlay() override;
 
 protected:
 	virtual void OnDeath();

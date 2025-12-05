@@ -8,6 +8,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "SBWeaponCollisionComponent.generated.h"
 
+class ASBWeapon;
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHitActor, const FHitResult&);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -17,6 +19,9 @@ class COPY_STELLARBLADE_API USBWeaponCollisionComponent : public UActorComponent
 
 public:
 	FOnHitActor OnHitActor;
+
+public:
+	ASBWeapon* OwnerWeapon = {};
 
 protected:
 	UPROPERTY(EditAnywhere)
@@ -47,14 +52,14 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::ForDuration;
 
+	UPROPERTY()
+	TArray<AActor*> AlreadyHitActors;
+
 protected:
 	/** 무기의 MeshComponent */
 	// StaticMesh, SkeletalMesh 등
 	UPROPERTY()
 	UPrimitiveComponent* WeaponMesh;
-
-	UPROPERTY()
-	TArray<AActor*> AlreadyHitActors;
 
 	bool bIsCollisionEnabled = false;
 
@@ -74,6 +79,8 @@ public:
 
 	void SetWeaponMesh(UPrimitiveComponent* MeshComponent);
 
+	void SetOwnerWeaopon(ASBWeapon* InOwnerWeapon);
+
 	void AddIgnoredActor(AActor* Actor);
 
 	void RemoveIgnoredActor(AActor* Actor);
@@ -82,9 +89,11 @@ public:
 
 	void SetAttachmentType(EAttachmentType InAttachmentType);
 
-protected:
-	bool CanHitActor(AActor* Actor) const;
+	bool CanHitActor(AActor* HitActor);
 
+	void AddHitActor(AActor* HitActor);
+
+protected:
 	void CollisionTrace();
 
 		

@@ -28,6 +28,11 @@ ASBWeapon::ASBWeapon()
 	DamageMultiplierMap.Add(SBGameplayTags::Monster_Attack_Repulse, 2.1f);
 }
 
+void ASBWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void ASBWeapon::EquipItem(bool isSubWeapon)
 {
 	Super::EquipItem();
@@ -44,8 +49,10 @@ void ASBWeapon::EquipItem(bool isSubWeapon)
 
 		for (auto& WeaponCollision : WeaponCollisions)
 		{
+			WeaponCollision->SetOwnerWeaopon(this);
 			WeaponCollision->SetWeaponMesh(Mesh);
 			WeaponCollision->AddIgnoredActor(GetOwner());
+			WeaponCollision->RegisterComponent();
 		}
 
 		// 장착한 무기의 CombatType으로 업데이트.
@@ -53,7 +60,7 @@ void ASBWeapon::EquipItem(bool isSubWeapon)
 		{
 			if (UMonster_AnimInstance* Anim = Cast<UMonster_AnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
 			{
-				//Anim->UpdateCombatMode(CombatType);
+				Anim->UpdateCombatMode(CombatType);
 			}
 		}
 	}
@@ -192,6 +199,8 @@ void ASBWeapon::ActivateCollision()
 	if (WeaponCollisions.IsEmpty())
 		return;
 
+	AlreadyHitActors.Empty();
+
 	for (const auto& Col : WeaponCollisions)
 		Col->TurnOnCollision();
 }
@@ -203,6 +212,16 @@ void ASBWeapon::DeactivateCollision()
 
 	for (const auto& Col : WeaponCollisions)
 		Col->TurnOffCollision();
+}
+
+void ASBWeapon::AddHitActor(AActor* HitActor)
+{
+	AlreadyHitActors.Add(HitActor);
+}
+
+bool ASBWeapon::CanHitActor(AActor* HitActor)
+{
+	return AlreadyHitActors.Contains(HitActor) == false;
 }
 
 void ASBWeapon::ActivateWeapon()

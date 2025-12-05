@@ -18,6 +18,9 @@ ATestCharacter::ATestCharacter()
 
 	ProcMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
 	ProcMeshComponent->SetupAttachment(GetRootComponent());
+
+	OtherMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("OtherMesh"));
+	OtherMeshComponent->SetupAttachment(GetRootComponent());
 }
 
 // Called when the game starts or when spawned
@@ -26,11 +29,7 @@ void ATestCharacter::BeginPlay()
 	Super::BeginPlay();
 
 
-	SelectVertices(0);
-	ApplyVertexAlphaToSkeletalMesh();
-	CopySkeletalMeshToProcedural(0);
-	FVector SliceNormal = FVector(0, 0, 1); 
-	SliceMeshAtBone(SliceNormal, true);
+
 
 	//GetMesh()->SetVisibility(false);
 }
@@ -45,11 +44,11 @@ void ATestCharacter::Tick(float DeltaTime)
 
 	if (PC->WasInputKeyJustPressed(EKeys::NumPadFour))
 	{
-		FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
-		FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
-
-		ProcMeshComponent->AddLocalRotation(ProcMeshRotation);
-		//OtherHalfMesh->AddLocalRotation(OtherHalfRotation);
+		SelectVertices(0);
+		ApplyVertexAlphaToSkeletalMesh();
+		CopySkeletalMeshToProcedural(0);
+		FVector SliceNormal = FVector(0, 0, 1);
+		SliceMeshAtBone(SliceNormal, true);
 	}
 #endif
 }
@@ -93,6 +92,8 @@ void ATestCharacter::SelectVertices(int32 LODIndex)
 	//위치를 들고온다.
 	FTransform MeshTransform = GetMesh()->GetComponentTransform();
 	FVector TargetBoneLocation = GetMesh()->GetBoneLocation(TargetBoneName);
+
+	FVector BoneLocalPos = GetMesh()->GetBoneLocation(TargetBoneName, EBoneSpaces::ComponentSpace);
 
 	int32 TargetBoneIndex = GetMesh()->GetBoneIndex(TargetBoneName);
 	if (TargetBoneIndex == INDEX_NONE) {
@@ -220,14 +221,14 @@ void ATestCharacter::CopySkeletalMeshToProcedural(int32 LODIndex)
 
 	//Section Index - 어떤 Section부터 시작하는가?, Vertices - 어떤 vertex를 사용하는가?
 	//Indices - 어떤 삼각형 구조를 사용하는가?, Normals, UV, Colors, Tangents, bCreateCollision - 충돌 활성화
-
 	ProcMeshComponent->CreateMeshSection(0, FilteredVerticesArray, Indices, Normals, UV, VertexColors, Tangents, true);
 	UMaterialInterface* SkeletalMeshMaterial = GetMesh()->GetMaterial(0);
 	if (SkeletalMeshMaterial) {
 		ProcMeshComponent->SetMaterial(0, SkeletalMeshMaterial);
-		//UE_LOG(LogTemp, Display, TEXT("Applied material from SkeletalMesh to ProceduralMesh."));
 	}
 	else UE_LOG(LogTemp, Warning, TEXT("SkeletalMesh has no material assigned."));
+
+	ProcMeshComponent->SetWorldScale3D(GetMesh()->GetComponentScale());
 }
 
 void ATestCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
@@ -249,18 +250,22 @@ void ATestCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
 		UE_LOG(LogTemp, Warning, TEXT("SliceMeshAtBone: Procedural mesh has no material assigned."));
 	}
 
-	UProceduralMeshComponent* OtherHalfMesh = nullptr;		//잘린 Procedural Mesh가 OtherHalfMesh가 된다.
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
 	UKismetProceduralMeshLibrary::SliceProceduralMesh(
 		ProcMeshComponent,
 		BoneWorldLocation,
 		SliceNormal,
 		bCreateOtherHalf,
-		OtherHalfMesh,
+		OtherMeshComponent,
 		EProcMeshSliceCapOption::CreateNewSectionForCap,
 		CapMaterial                           //절단면 Material
 	);
 
-	if (!OtherHalfMesh) {
+	if (!OtherMeshComponent) {
 		UE_LOG(LogTemp, Warning, TEXT("SliceMeshAtBone: Failed to slice mesh at bone '%s'."), *TargetBoneName.ToString());
 		return;
 	}
@@ -270,53 +275,47 @@ void ATestCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
 	}
 
 	ProcMeshComponent->SetSimulatePhysics(false);
-	OtherHalfMesh->SetSimulatePhysics(false);
-
-	//FTransform BoneWorldTransform = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_World);
-	//FTransform MeshWorldTransform = ProcMeshComponent->GetComponentTransform();
-
-	//FTransform LocalToBone = MeshWorldTransform.GetRelativeTransform(BoneWorldTransform);
-	//ProcMeshComponent->SetRelativeTransform(LocalToBone);
+	OtherMeshComponent->SetSimulatePhysics(false);
 
 	//Procedural Mesh를 특정 Socket에 Attach
-	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
-	ProcMeshComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale);
-	OtherHalfMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale);
-	//OtherHalfMesh->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
+	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);	
+	ProcMeshComponent->AttachToComponent(GetMesh(), TransformRules, ProceduralMeshAttachSocketName);
+	OtherMeshComponent->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
 
-	//OtherHalfMesh->SetVisibility(false);
+	// 보정 회전 적용
+	FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
+	FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
 
-
-	//// Attach with SnapToTarget
-	////FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
-	////ProcMeshComponent->AttachToComponent(GetMesh(), AttachRules, ProceduralMeshAttachSocketName);
-	////OtherHalfMesh->AttachToComponent(GetMesh(), AttachRules, OtherHalfMeshAttachSocketName);
-
-	//FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
-	//FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
+	ProcMeshComponent->AddLocalRotation(ProcMeshRotation);
+	OtherMeshComponent->AddLocalRotation(OtherHalfRotation);
 
 
+	FVector Center = GetAverageVertexPosition(FilteredVerticesArray);
+	FVector ProcWorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(Center);
+	FVector ProcSocketWorld = GetMesh()->GetSocketLocation(ProceduralMeshAttachSocketName);
+	ProcMeshComponent->AddWorldOffset(ProcSocketWorld - ProcWorldCenter);
 
-	//ProcMeshComponent->SetRelativeRotation(ProcSocketRot);
-	//OtherHalfMesh->SetRelativeRotation(OtherSocketRot);
-	//ProcMeshComponent->AddLocalRotation(FRotator(0.f, 0.f, 180.f));
+	FProcMeshSection* OtherSection = OtherMeshComponent->GetProcMeshSection(0);
+	TArray<FVector> OtherVertices;
+	for (const FProcMeshVertex& V : OtherSection->ProcVertexBuffer)
+		OtherVertices.Add(V.Position);
 
-	//FTransform SocketTransform = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_World);
-	//FVector LocalCenter = GetAverageVertexPosition(FilteredVerticesArray);
+	FVector OtherCenter = GetAverageVertexPosition(OtherVertices);
+	FVector OtherWorldCenter = OtherMeshComponent->GetComponentTransform().TransformPosition(OtherCenter);
+	FVector OtherSocketWorld = GetMesh()->GetSocketLocation(OtherHalfMeshAttachSocketName);
+	OtherMeshComponent->AddWorldOffset(OtherSocketWorld - OtherWorldCenter);
 
-	//FVector WorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(LocalCenter);
-	//FVector Offset = SocketTransform.GetLocation() - WorldCenter;
-
-	//ProcMeshComponent->SetWorldLocation(SocketTransform.GetLocation() + Offset);
 
 	//Ragdoll 적용 & Bone 자름.
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->BreakConstraint(FVector(1000.f, 1000.f, 10000.f), FVector::ZeroVector, TargetBoneName);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(TargetBoneName, true, true);
+	GetMesh()->BreakConstraint(FVector(1000.f, 1000.f, 1000.f), FVector::ZeroVector, TargetBoneName);
 	GetMesh()->SetSimulatePhysics(true);
 
-	//Procedural Mesh에 물리 적용
-	ProcMeshComponent->SetSimulatePhysics(true); //-> true 시 따로 움직인다.
-	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	OtherMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 }
 
 FVector ATestCharacter::GetAverageVertexPosition(const TArray<FVector>& Vertices)

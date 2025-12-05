@@ -49,7 +49,7 @@ void UBTService_SelectBehavior::UpdateBehavior(UBehaviorTreeComponent& OwnerComp
 	UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
 
 	check(BlackboardComp)
-		check(ControlledEnemy)
+	check(ControlledEnemy)
 
 		AActor* TargetActor = Cast<AActor>(BlackboardComp->GetValueAsObject(TargetKey.SelectedKeyName));
 

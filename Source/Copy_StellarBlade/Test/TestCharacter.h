@@ -20,6 +20,10 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UProceduralMeshComponent* ProcMeshComponent;
 
+
+	UPROPERTY(VisibleAnywhere)
+	UProceduralMeshComponent* OtherMeshComponent;;
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "Slice")
 	FName TargetBoneName = "upperarm_l";
