@@ -42,6 +42,13 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TMap<FGameplayTag, float> DamageMultiplierMap;
 
+protected:
+	UPROPERTY(VisibleAnywhere, Category = "Inform")
+	FVector PrevPosition = FVector::ZeroVector;
+
+	UPROPERTY(VisibleAnywhere, Category = "Inform")
+	FVector AttackDirection = FVector::ZeroVector;
+
 private:
 	FGameplayTag lastAttackTag;
 	AEveCharacter* Owner = nullptr;
@@ -52,6 +59,11 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+
+private:
+	void CalculateWeaponMoveDirection();
+
+public:
 	virtual void EquipItem();
 
 	void SetLastAttackTag(FGameplayTag tag);
@@ -69,4 +81,7 @@ public:
 
 	/** 무기의 Collision에 검출된 Actor에 Damage를 전달 */
 	void OnHitActor(const FHitResult& Hit);
+
+public:
+	FVector GetAttackDirection();
 };

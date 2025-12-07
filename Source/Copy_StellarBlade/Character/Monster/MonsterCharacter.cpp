@@ -25,6 +25,7 @@
 #include "UI/SBStatBarWidget.h"
 #include "UI/Monster/MonsterStatBarWidget.h"
 #include "AI/MonsterAIController.h"
+#include "Player/SBEveWeapon.h"
 
 #include "ProceduralMeshComponent.h"
 #include "Rendering/SkeletalMeshRenderData.h"
@@ -178,26 +179,26 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 		ImpactEffect(ImpactPoint);
 
 		HitReaction(EventInstigator->GetPawn());
+
+		ASBEveWeapon* PlayerWeapon = Cast<ASBEveWeapon>(DamageCauser);
+
+		FVector HitDirection = PlayerWeapon->GetAttackDirection();
+
+		//Vertex Shake
+		if (HitDirection != FVector::ZeroVector)
+		{
+			for (const auto& DynamicMaterialIndex : DynamicMaterailIndices)
+			{
+				UMaterialInstanceDynamic* DynamicMaterial =
+					Cast<UMaterialInstanceDynamic>(GetMesh()->GetMaterial(DynamicMaterialIndex));
+
+				DynamicMaterial->SetVectorParameterValue("HitWorldPosition", ImpactPoint);
+				DynamicMaterial->SetVectorParameterValue("HitDirection", PlayerWeapon->GetAttackDirection());
+				DynamicMaterial->SetScalarParameterValue("HitStrength", 1.0f);
+				DynamicMaterial->SetScalarParameterValue("HitTime", GetWorld()->GetTimeSeconds());
+			}
+		}
 	}
-
-	// Vertex Shake
-	//for (const auto& DynamicMaterialIndex : DynamicMaterailIndices)
-	//{
-	//	UMaterialInstanceDynamic* DynamicMaterial =
-	//		Cast<UMaterialInstanceDynamic>(GetMesh()->GetMaterial(DynamicMaterialIndex));
-
-	//	DynamicMaterial->SetVectorParameterValue("HitWorldPosition", ImpactPoint);
-	//	DynamicMaterial->SetVectorParameterValue("HitDirection", ShotDirection);
-	//	DynamicMaterial->SetScalarParameterValue("HitStrength", 1.0f);
-	//	DynamicMaterial->SetScalarParameterValue("HitTime", GetWorld()->GetTimeSeconds());
-	// 
-	// HitDirection = -ImpactNormal;
-	//  DynamicMaterial->SetVectorParameterValue("HitWorldPos", ImpactPoint);
-	//	DynamicMaterial->SetVectorParameterValue("HitDirection", HitDirection);
-	//	DynamicMaterial->SetScalarParameterValue("HitStrength", HitStrength);
-	//	DynamicMaterial->SetScalarParameterValue("HitRadius", HitRadius);
-	//}
-
 
 	return ActualDamage;
 }

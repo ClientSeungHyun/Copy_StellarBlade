@@ -37,6 +37,17 @@ void ASBEveWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	CalculateWeaponMoveDirection();
+}
+
+void ASBEveWeapon::CalculateWeaponMoveDirection()
+{
+	FVector CurrentPos = GetOwner()->GetActorLocation();
+
+	AttackDirection = CurrentPos - PrevPosition;
+	AttackDirection.Normalize();
+
+	PrevPosition = CurrentPos;
 }
 
 void ASBEveWeapon::EquipItem()
@@ -111,6 +122,7 @@ void ASBEveWeapon::OnHitActor(const FHitResult& Hit)
 
 	// 데미지 방향
 	FVector DamageDirection = GetOwner()->GetActorForwardVector();
+	//FVector DamageDirection = AttackDirection;
 
 	// 데미지
 	float AttackDamage = GetAttackDamage();
@@ -123,5 +135,10 @@ void ASBEveWeapon::OnHitActor(const FHitResult& Hit)
 		GetOwner()->GetInstigatorController(),
 		this,
 		nullptr);
+}
+
+FVector ASBEveWeapon::GetAttackDirection()
+{
+	return AttackDirection;
 }
 
