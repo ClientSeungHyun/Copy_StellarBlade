@@ -45,7 +45,6 @@ AMonsterCharacter::AMonsterCharacter()
 	// LockOn 위젯.
 	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
 	LockOnWidgetComponent->SetupAttachment(GetRootComponent());
-	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
 	LockOnWidgetComponent->SetDrawSize(FVector2D(15.f, 15.f));
 	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	LockOnWidgetComponent->SetVisibility(false);
@@ -87,6 +86,11 @@ void AMonsterCharacter::BeginPlay()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 	bUseControllerRotationYaw = false;
+
+	if (LockOnWidgetComponent)
+	{
+		LockOnWidgetComponent->SetRelativeLocation(LockOnWidgetPositionOffset);
+	}
 
 	if (MonsterStatBarWidget)
 	{
@@ -131,19 +135,38 @@ void AMonsterCharacter::BeginPlay()
 		DissolveTimeline.AddInterpFloat(DissolveCurveFloat, TimelineProgress);
 	}
 
-	// 머티리얼
-	TArray<UMaterialInterface*> Materials = GetMesh()->GetMaterials();
-	uint32 MaterialIndex = 0;
-	for (UMaterialInterface* const Materail : Materials)
-	{
-		UMaterialInstanceDynamic* MaterialDynamic = UMaterialInstanceDynamic::Create(Materail, this);
-		if (MaterialDynamic)
-		{
-			GetMesh()->SetMaterial(MaterialIndex, MaterialDynamic);
-			DynamicMaterailIndices.Add(MaterialIndex);
-		}
-		++MaterialIndex;
-	}
+
+	InitDynamicMaterials();
+
+	//// 머티리얼
+	//TArray<UMaterialInterface*> Materials = GetMesh()->GetMaterials();
+	//uint32 MaterialIndex = 0;
+
+	//// 자식 메시 찾기
+	//TArray<USceneComponent*> ChildrenComp;
+	//GetMesh()->GetChildrenComponents(true, ChildrenComp);
+
+	//for (USceneComponent* Child : ChildrenComp)
+	//{
+	//	if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(Child))
+	//	{
+	//		Materials.Append(SkelComp->GetMaterials());
+	//	}
+	//}
+
+	//for (UMaterialInterface* const Materail : Materials)
+	//{
+	//	UMaterialInstanceDynamic* MaterialDynamic = UMaterialInstanceDynamic::Create(Materail, this);
+	//	if (MaterialDynamic)
+	//	{
+	//		GetMesh()->SetMaterial(MaterialIndex, MaterialDynamic);
+	//		DynamicMaterailIndices.Add(MaterialIndex);
+	//	}
+	//	++MaterialIndex;
+	//}
+
+	if(bIsSliceObject)
+		SelectVertices(0);
 }
 
 void AMonsterCharacter::Tick(float DeltaTime)
@@ -187,6 +210,22 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 		//Vertex Shake
 		if (HitDirection != FVector::ZeroVector)
 		{
+			const FVector AttackDir = PlayerWeapon->GetAttackDirection();
+			const float CurrentTime = GetWorld()->GetTimeSeconds();
+
+			for (const FDynamicMaterialInfo& Info : DynamicMaterials)
+			{
+				if (Info.DynamicMaterial)
+				{
+					Info.DynamicMaterial->SetVectorParameterValue("HitWorldPosition", ImpactPoint);
+					Info.DynamicMaterial->SetVectorParameterValue("HitDirection", AttackDir);
+					Info.DynamicMaterial->SetScalarParameterValue("HitStrength", 1.0f);
+					Info.DynamicMaterial->SetScalarParameterValue("HitTime", CurrentTime);
+				}
+			}
+		}
+		/*if (HitDirection != FVector::ZeroVector)
+		{
 			for (const auto& DynamicMaterialIndex : DynamicMaterailIndices)
 			{
 				UMaterialInstanceDynamic* DynamicMaterial =
@@ -197,7 +236,7 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 				DynamicMaterial->SetScalarParameterValue("HitStrength", 1.0f);
 				DynamicMaterial->SetScalarParameterValue("HitTime", GetWorld()->GetTimeSeconds());
 			}
-		}
+		}*/
 	}
 
 	return ActualDamage;
@@ -209,6 +248,7 @@ void AMonsterCharacter::OnDeath()
 		return;
 
 	bIsDead = true;
+	MonsterStatBarWidget->DestroyComponent();
 
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
@@ -226,17 +266,21 @@ void AMonsterCharacter::OnDeath()
 		}
 	}
 
-	//SelectVertices(0);
-	//ApplyVertexAlphaToSkeletalMesh();
-	//CopySkeletalMeshToProcedural(0);
-	//FVector SliceNormal = FVector(0, 1, 0);  // Slice in the Z direction
-	//SliceMeshAtBone(SliceNormal, true);
-
-	if(CombatComponent)
+	if (CombatComponent)
 		CombatComponent->SetWeapon(NULL, false);
 
-	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetSimulatePhysics(true);
+	if (bIsSliceObject)
+	{
+		ApplyVertexAlphaToSkeletalMesh();
+		CopySkeletalMeshToProcedural(0);
+		FVector SliceNormal = FVector(0, 0, 1);
+		SliceMeshAtBone(SliceNormal, true);
+	}
+	else
+	{
+		GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+		GetMesh()->SetSimulatePhysics(true);
+	}
 
 	FTimerHandle DeadTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(
@@ -487,6 +531,8 @@ void AMonsterCharacter::SelectVertices(int32 LODIndex)
 	FTransform MeshTransform = GetMesh()->GetComponentTransform();
 	FVector TargetBoneLocation = GetMesh()->GetBoneLocation(TargetBoneName);
 
+	FVector BoneLocalPos = GetMesh()->GetBoneLocation(TargetBoneName, EBoneSpaces::ComponentSpace);
+
 	int32 TargetBoneIndex = GetMesh()->GetBoneIndex(TargetBoneName);
 	if (TargetBoneIndex == INDEX_NONE) {
 		UE_LOG(LogTemp, Warning, TEXT("Target bone not found: %s"), *TargetBoneName.ToString());
@@ -541,7 +587,7 @@ void AMonsterCharacter::SelectVertices(int32 LODIndex)
 
 	//현재 LOD의 총 Index 수를 가져온다.
 	const int32 NumIndices = IndexBuffer->Num();
-	Indices.SetNum(NumIndices); // 모든 값을 0으로 초기화하며 메모리 공간 확보보
+	Indices.SetNum(NumIndices);
 	for (int32 i = 0; i < NumIndices; i += 3) {
 		//IndexBuffer Get(i) - 현재 처리 중인 삼각형을 구성하는 버텍스 인덱스를 가져옴.
 		//VertexIndex : Get(0) = a, Get(1) = b, Get(2) = c로 abc삼각형, Get(3) = c, Get(4) = d, Get(5) = a로 cda삼각형 (여기서 abcd는 FVector위치라고 취급)
@@ -604,7 +650,7 @@ void AMonsterCharacter::CopySkeletalMeshToProcedural(int32 LODIndex)
 	}
 
 	//Skeletal Mesh의 Location과 Rotation을 들고온다.
-	FVector MeshLocation = GetMesh()->GetComponentLocation() + GetMesh()->GetRightVector() * 200.f;
+	FVector MeshLocation = GetMesh()->GetComponentLocation();
 	FRotator MeshRotation = GetMesh()->GetComponentRotation();
 
 	//Skeletal Mesh의 Location과 Rotation을 Procedural Mesh에 적용한다.
@@ -613,14 +659,14 @@ void AMonsterCharacter::CopySkeletalMeshToProcedural(int32 LODIndex)
 
 	//Section Index - 어떤 Section부터 시작하는가?, Vertices - 어떤 vertex를 사용하는가?
 	//Indices - 어떤 삼각형 구조를 사용하는가?, Normals, UV, Colors, Tangents, bCreateCollision - 충돌 활성화
-
 	ProcMeshComponent->CreateMeshSection(0, FilteredVerticesArray, Indices, Normals, UV, VertexColors, Tangents, true);
 	UMaterialInterface* SkeletalMeshMaterial = GetMesh()->GetMaterial(0);
 	if (SkeletalMeshMaterial) {
 		ProcMeshComponent->SetMaterial(0, SkeletalMeshMaterial);
-		//UE_LOG(LogTemp, Display, TEXT("Applied material from SkeletalMesh to ProceduralMesh."));
 	}
 	else UE_LOG(LogTemp, Warning, TEXT("SkeletalMesh has no material assigned."));
+
+	ProcMeshComponent->SetWorldScale3D(GetMesh()->GetComponentScale());
 }
 
 void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
@@ -630,6 +676,7 @@ void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHa
 		return;
 	}
 
+	const FVector BoneWorldLocation = GetMesh()->GetBoneLocation(TargetBoneName, EBoneSpaces::WorldSpace);
 	FVector BoneLocation = GetMesh()->GetBoneLocation(TargetBoneName);
 	if (BoneLocation == FVector::ZeroVector) {
 		UE_LOG(LogTemp, Error, TEXT("SliceMeshAtBone: Failed to get Bone '%s' location. Check if the bone exists in the skeleton."), *TargetBoneName.ToString());
@@ -641,18 +688,22 @@ void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHa
 		UE_LOG(LogTemp, Warning, TEXT("SliceMeshAtBone: Procedural mesh has no material assigned."));
 	}
 
-	UProceduralMeshComponent* OtherHalfMesh = nullptr;		//잘린 Procedural Mesh가 OtherHalfMesh가 된다.
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
 	UKismetProceduralMeshLibrary::SliceProceduralMesh(
 		ProcMeshComponent,
-		BoneLocation,
+		BoneWorldLocation,
 		SliceNormal,
 		bCreateOtherHalf,
-		OtherHalfMesh,
+		OtherMeshComponent,
 		EProcMeshSliceCapOption::CreateNewSectionForCap,
 		CapMaterial                           //절단면 Material
 	);
 
-	if (!OtherHalfMesh) {
+	if (!OtherMeshComponent) {
 		UE_LOG(LogTemp, Warning, TEXT("SliceMeshAtBone: Failed to slice mesh at bone '%s'."), *TargetBoneName.ToString());
 		return;
 	}
@@ -660,45 +711,106 @@ void AMonsterCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHa
 		UE_LOG(LogTemp, Warning, TEXT("SliceMeshAtBone: One or both Socket Names are invalid!"));
 		return;
 	}
+
 	ProcMeshComponent->SetSimulatePhysics(false);
-	OtherHalfMesh->SetSimulatePhysics(false);
-	UE_LOG(LogTemp, Display, TEXT("Physic Disable"));
+	OtherMeshComponent->SetSimulatePhysics(false);
 
 	//Procedural Mesh를 특정 Socket에 Attach
 	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
 	ProcMeshComponent->AttachToComponent(GetMesh(), TransformRules, ProceduralMeshAttachSocketName);
-	OtherHalfMesh->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
+	OtherMeshComponent->AttachToComponent(GetMesh(), TransformRules, OtherHalfMeshAttachSocketName);
+
+	// 보정 회전 적용
+	FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
+	FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
+
+	FVector Center = GetAverageVertexPosition(FilteredVerticesArray);
+	FVector ProcWorldCenter = ProcMeshComponent->GetComponentTransform().TransformPosition(Center);
+	FVector ProcSocketWorld = GetMesh()->GetSocketLocation(ProceduralMeshAttachSocketName);
+	ProcMeshComponent->AddWorldOffset(ProcSocketWorld - ProcWorldCenter);
+
+	FProcMeshSection* OtherSection = OtherMeshComponent->GetProcMeshSection(0);
+	TArray<FVector> OtherVertices;
+	for (const FProcMeshVertex& V : OtherSection->ProcVertexBuffer)
+		OtherVertices.Add(V.Position);
+
+	FVector OtherCenter = GetAverageVertexPosition(OtherVertices);
+	FVector OtherWorldCenter = OtherMeshComponent->GetComponentTransform().TransformPosition(OtherCenter);
+	FVector OtherSocketWorld = GetMesh()->GetSocketLocation(OtherHalfMeshAttachSocketName);
+	OtherMeshComponent->AddWorldOffset(OtherSocketWorld - OtherWorldCenter);
+
 
 	//Ragdoll 적용 & Bone 자름.
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(TargetBoneName, true, true);
 	GetMesh()->BreakConstraint(FVector(1000.f, 1000.f, 1000.f), FVector::ZeroVector, TargetBoneName);
 	GetMesh()->SetSimulatePhysics(true);
 
-	//Procedural Mesh에 물리 적용
-	//ProcMeshComponent->SetSimulatePhysics(true); //-> true 시 따로 움직인다.
-	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ProcMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	OtherMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AMonsterCharacter::InitDynamicMaterials()
+{
+	TArray<USkeletalMeshComponent*> MeshComponents;
+	MeshComponents.Add(GetMesh());
+
+	TArray<USceneComponent*> ChildrenComp;
+	GetMesh()->GetChildrenComponents(true, ChildrenComp);
+
+	for (USceneComponent* Ch : ChildrenComp)
+	{
+		if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(Ch))
+		{
+			MeshComponents.Add(SkelComp);
+		}
+	}
+
+	for (USkeletalMeshComponent* MeshComp : MeshComponents)
+	{
+		int32 MaterialCount = MeshComp->GetNumMaterials();
+
+		for (int32 Index = 0; Index < MaterialCount; ++Index)
+		{
+			UMaterialInterface* Mat = MeshComp->GetMaterial(Index);
+			if (Mat == nullptr)
+				continue;
+
+			UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Mat, this);
+			if (MID)
+			{
+				MeshComp->SetMaterial(Index, MID);
+
+				// 필요하다면 나중에 업데이트 위해 저장
+				DynamicMaterials.Add(FDynamicMaterialInfo{ MeshComp, Index, MID });
+			}
+		}
+	}
 }
 
 void AMonsterCharacter::UpdateDissolveProgress(const float InValue)
 {
-	for (const auto& DynamicMaterialIndex : DynamicMaterailIndices)
+	// 저장된 모든 Dynamic Material 에 값 적용
+	for (const FDynamicMaterialInfo& Info : DynamicMaterials)
 	{
-		UMaterialInstanceDynamic* DynamicMaterial =
-			Cast<UMaterialInstanceDynamic>(GetMesh()->GetMaterial(DynamicMaterialIndex));
-
-		DynamicMaterial->SetScalarParameterValue("DissolveParam", InValue);
+		if (Info.DynamicMaterial)
+		{
+			Info.DynamicMaterial->SetScalarParameterValue("DissolveParam", InValue);
+		}
 	}
 
+	// Dissolve 완료 시 삭제 로직
 	if (InValue >= 1.f)
 	{
-		AAIController* AI = Cast<AAIController>(GetController());
-		if (AI && AI->BrainComponent)
+		// AI 정지
+		if (AAIController* AI = Cast<AAIController>(GetController()))
 		{
-			AI->BrainComponent->StopLogic(TEXT("Enemy Died"));
-		}
+			if (AI->BrainComponent)
+			{
+				AI->BrainComponent->StopLogic(TEXT("Enemy Died"));
+			}
 
-		if (AI)
-		{
 			AI->UnPossess();
 			AI->Destroy();
 		}
@@ -712,6 +824,17 @@ void AMonsterCharacter::StartDissolve()
 {
 	DissolveTimeline.PlayFromStart();
 	SetActorTickEnabled(true);
+}
+
+FVector AMonsterCharacter::GetAverageVertexPosition(const TArray<FVector>& Vertices)
+{
+	if (Vertices.Num() == 0) return FVector::ZeroVector;
+
+	FVector Sum = FVector::ZeroVector;
+	for (const FVector& V : Vertices)
+		Sum += V;
+
+	return Sum / Vertices.Num();
 }
 
 ASBWeapon* AMonsterCharacter::GetMainWeapon()

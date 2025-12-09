@@ -9,6 +9,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Interfaces/TargetingInterface.h"
+#include "Character/Monster/MonsterCharacter.h"
 
 UTargetingComponent::UTargetingComponent()
 {
@@ -232,7 +233,12 @@ void UTargetingComponent::FaceLockOnActor() const
 {
 	const FRotator CurrentControlRotation = Character->GetControlRotation();
 
-	const FVector TargetLocation = LockedTargetActor->GetActorLocation() - FVector(0.f, 0.f, 100.f);
+	FVector Offset = FVector::ZeroVector;
+	AMonsterCharacter* TargetMosnter = Cast<AMonsterCharacter>(LockedTargetActor);
+	if (LockedTargetActor)
+		Offset = TargetMosnter->GetTargetingPositionOffset();
+
+	const FVector TargetLocation = LockedTargetActor->GetActorLocation() + Offset;
 	const FRotator TargetLookAtRotation = UKismetMathLibrary::FindLookAtRotation(Character->GetActorLocation(), TargetLocation);
 
 	FRotator InterpRotation = FMath::RInterpTo(CurrentControlRotation, TargetLookAtRotation, GetWorld()->GetDeltaSeconds(), FaceLockOnRotationSpeed);

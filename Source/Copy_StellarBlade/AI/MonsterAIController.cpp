@@ -25,6 +25,8 @@ void AMonsterAIController::OnPossess(APawn* InPawn)
 
 	RunBehaviorTree(BehaviorTreeAsset);
 
+	bIsLookingPlayer = true;
+
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::UpdateTarget, 0.1f, true);
 }
 

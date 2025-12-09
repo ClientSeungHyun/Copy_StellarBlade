@@ -36,8 +36,8 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	bool bHaveTarget;
 
-	UPROPERTY(VisibleAnywhere)
-	bool bIsLookingPlayer;
+	UPROPERTY(EditAnywhere)
+	bool bIsLookingPlayer = true;
 
 	UPROPERTY(EditAnywhere)
 	float FollowMaxRange;

@@ -29,6 +29,7 @@ void ATestCharacter::BeginPlay()
 	Super::BeginPlay();
 
 
+	SelectVertices(0);
 
 
 	//GetMesh()->SetVisibility(false);
@@ -44,7 +45,6 @@ void ATestCharacter::Tick(float DeltaTime)
 
 	if (PC->WasInputKeyJustPressed(EKeys::NumPadFour))
 	{
-		SelectVertices(0);
 		ApplyVertexAlphaToSkeletalMesh();
 		CopySkeletalMeshToProcedural(0);
 		FVector SliceNormal = FVector(0, 0, 1);
@@ -285,9 +285,6 @@ void ATestCharacter::SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf)
 	// 보정 회전 적용
 	FRotator ProcSocketRot = GetMesh()->GetSocketTransform(ProceduralMeshAttachSocketName, RTS_Component).Rotator();
 	FRotator OtherSocketRot = GetMesh()->GetSocketTransform(OtherHalfMeshAttachSocketName, RTS_Component).Rotator();
-
-	ProcMeshComponent->AddLocalRotation(ProcMeshRotation);
-	OtherMeshComponent->AddLocalRotation(OtherHalfRotation);
 
 
 	FVector Center = GetAverageVertexPosition(FilteredVerticesArray);

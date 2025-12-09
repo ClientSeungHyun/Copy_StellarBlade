@@ -129,14 +129,17 @@ void USBWeaponCollisionComponent::CollisionTrace()
                 continue;
             }
 
-            if (OwnerWeapon && OwnerWeapon->CanHitActor(HitActor))
+            if (OwnerWeapon)
             {
-                OwnerWeapon->AddHitActor(HitActor);
-
-                // Call OnHitActor Broadcast
-                if (OnHitActor.IsBound())
+                if (OwnerWeapon->CanHitActor(HitActor))
                 {
-                    OnHitActor.Broadcast(Hit);
+                    OwnerWeapon->AddHitActor(HitActor);
+
+                    // Call OnHitActor Broadcast
+                    if (OnHitActor.IsBound())
+                    {
+                        OnHitActor.Broadcast(Hit);
+                    }
                 }
             }
             else if(CanHitActor(HitActor))

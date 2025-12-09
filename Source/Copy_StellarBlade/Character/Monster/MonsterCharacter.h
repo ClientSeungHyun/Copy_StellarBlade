@@ -22,6 +22,21 @@ class UWidgetComponent;
 class USphereComponent;
 class UProceduralMeshComponent;
 
+USTRUCT()
+struct FDynamicMaterialInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	USkeletalMeshComponent* MeshComp;
+
+	UPROPERTY()
+	int32 MaterialIndex;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* DynamicMaterial;
+};
+
 UCLASS()
 class COPY_STELLARBLADE_API AMonsterCharacter : public ACharacter, public ITargetingInterface, public ISBCombatInterface
 {
@@ -61,6 +76,12 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UWidgetComponent* LockOnWidgetComponent;
 
+	UPROPERTY(EditAnywhere)
+	FVector LockOnWidgetPositionOffset = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector TargetingPositionOffset = FVector::ZeroVector;
+
 	/** HealthBar */
 	UPROPERTY(VisibleAnywhere)
 	UWidgetComponent* MonsterStatBarWidget;
@@ -71,6 +92,12 @@ protected:
 protected:
 	UPROPERTY(VisibleAnywhere)
 	UProceduralMeshComponent* ProcMeshComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	UProceduralMeshComponent* OtherMeshComponent;;
+
+	UPROPERTY(EditAnywhere)
+	bool bIsSliceObject = false;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Effect")
@@ -125,7 +152,9 @@ protected:
 	TObjectPtr<UCurveFloat> DissolveCurveFloat;
 
 	const float DissolveDelayTime = 5.f;
-	TArray<uint32> DynamicMaterailIndices;
+
+	UPROPERTY()
+	TArray<FDynamicMaterialInfo> DynamicMaterials;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Sound")
@@ -148,6 +177,7 @@ protected:
 protected:
 	void ImpactEffect(const FVector& Location);
 	void HitReaction(const AActor* Attacker);
+
 public:
 	//TargetingInterface ±¸Çö
 	virtual void OnTargeted(bool bTargeted) override;
@@ -169,7 +199,11 @@ public:
 	void CopySkeletalMeshToProcedural(int32 LODIndex);
 	void SliceMeshAtBone(FVector SliceNormal, bool bCreateOtherHalf);
 
+	FVector GetAverageVertexPosition(const TArray<FVector>& Vertices);
+
 public:
+	void InitDynamicMaterials();
+
 	UFUNCTION()
 	void UpdateDissolveProgress(const float InValue);
 
@@ -201,5 +235,7 @@ public:
 
 	FORCEINLINE bool GetAllowCounterAttack_Repulse() { return bAllowCounterAttack_Repulse; }
 	FORCEINLINE void SetAllowCounterAttack_Repulse(bool isAllow) { bAllowCounterAttack_Repulse = isAllow; }
+
+	FORCEINLINE FVector GetTargetingPositionOffset() { return TargetingPositionOffset; }
 };
 

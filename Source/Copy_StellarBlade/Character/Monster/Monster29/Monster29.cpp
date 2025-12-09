@@ -29,17 +29,7 @@ void AMonster29::BeginPlay()
 
 void AMonster29::OnDeath()
 {
-	if (bIsDead)
-		return;
-
-	bIsDead = true;
-
-	// AI 중지
-	if (AAIController* AIController = Cast<AAIController>(GetController()))
-	{
-		AIController->GetBrainComponent()->StopLogic(TEXT("Death"));
-		AIController->UnPossess();
-	}
+	Super::OnDeath();
 }
 
 

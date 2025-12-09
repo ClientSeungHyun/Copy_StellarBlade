@@ -141,7 +141,7 @@ void AEveCharacter::Tick(float DeltaTime)
 			bCanPerfectDodge = true;
 		}
 
-		if (CurrentPressTime < 0.5f && StateComponent->GetCurrentState() != SBEveTags::Eve_State_Dodge && StateComponent->GetCurrentState() != SBEveTags::Eve_State_PerfectDodge)
+		if (CurrentPressTime < 0.5f)
 		{
 			bCanPerfectDodge = false;
 			Dodge();
@@ -217,20 +217,22 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 		return 0.f;
 
 	//퍼펙트 회피
-	if (bCanPerfectDodge && HitTime - DodgeStartTime <= PerfectDodgeTime)
+	if (HitTime - DodgeStartTime <= PerfectDodgeTime)
 	{
 		PerfectDodge();
 		return 0.f;
 	}
 
+	PlayShakeCamera();
+	HitReaction(this);
+
+	Damage *= !isPerfectGuarded;
 	float  ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 
 	//방어 or 맞을 때
 	if (AttributeComponent)
 	{
 		AttributeComponent->TakeDamageAmount(ActualDamage);
-		PlayShakeCamera();
-		HitReaction(this);
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
 
@@ -384,7 +386,7 @@ void AEveCharacter::Running()
 		float Length = CurrentPlaying_AM->GetPlayLength();
 		float Ratio = Position / Length;
 
-		if (Ratio > 0.5f)
+		if (Ratio > 0.35f)
 		{
 			AnimInstance->Montage_Stop(0.2f, CurrentPlaying_AM);
 			StateComponent->SetState(SBEveTags::Eve_State_Running);
@@ -403,9 +405,26 @@ void AEveCharacter::StopRunning()
 
 void AEveCharacter::Dodge()
 {
-	StateComponent->SetState(SBEveTags::Eve_State_Dodge);
-
 	DodgeStartTime = GetWorld()->GetTimeSeconds();
+
+	if (StateComponent->GetCurrentState() == SBEveTags::Eve_State_Dodge || StateComponent->GetCurrentState() == SBEveTags::Eve_State_PerfectDodge)
+	{
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		float Position = AnimInstance->Montage_GetPosition(CurrentPlaying_AM);
+		float Length = CurrentPlaying_AM->GetPlayLength();
+		float Ratio = Position / Length;
+
+		if (Ratio > 0.65f)
+		{
+			AnimInstance->Montage_Stop(0.2f, CurrentPlaying_AM);
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	StateComponent->SetState(SBEveTags::Eve_State_Dodge);
 
 	if (TargetingComponent->IsLockOn() == false)
 	{
@@ -443,6 +462,7 @@ void AEveCharacter::Dodge()
 			CurrentPlaying_AM = DodgeAnimBack;
 		}
 	}
+
 }
 
 void AEveCharacter::Idle()
