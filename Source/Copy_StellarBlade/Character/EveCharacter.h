@@ -4,6 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
 #include "GameplayTagContainer.h"
 #include "EveCharacter.generated.h"
 
@@ -112,7 +117,7 @@ protected:
 	TSubclassOf<UCameraShakeBase> ShakeCamera;
 
 	UPROPERTY()
-	ASBEveWeapon* Sword;
+	ASBEveWeapon* Sword = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Run/Dodge")
 	float DodgeThreshold = 0.25f; // 0.25초 이하로 누르면 회피
@@ -166,6 +171,27 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
 	TArray<USoundBase*> GuardSoundList;
+
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraSystem* PerfectGuard_effect;	
+	
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraSystem* Guard_effect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
+	UMaterialInterface* DodgeOverlayMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
+	UMaterialInterface* BlinkOverlayMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraSystem* Body_Lightning_effect;
+
+	UPROPERTY()
+	UNiagaraComponent* Body_LightningComps;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* DynamicOverlayMat;
 
 	UPROPERTY()
 	USoundBase* PerfectParrySound_01;	
@@ -258,6 +284,18 @@ public:
 
 	UCharacterMovementComponent* MovementComp = nullptr;
 
+
+	void ActiveSwordEffect();
+	void DeActiveSwordEffect();
+
+	void StartPerfectDodge();
+	void EndOverlayEffect();
+
+	void StartBodyLightEffect();
+	void EndBodyLightEffect();
+	void StartBlinkOverlayEffect();
+	void StartWordBlinkEffct();
+
 protected:
 	/** 캐릭터가 이동중인지 체크 */
 	bool IsMoving() const;
@@ -317,4 +355,5 @@ protected:
 	void PlayHitVoiceSound();
 	void PlayGuardSound();
 	void PlayPerfectParrySound();
+
 };

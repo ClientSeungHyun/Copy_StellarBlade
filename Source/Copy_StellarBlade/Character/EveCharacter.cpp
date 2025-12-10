@@ -101,6 +101,19 @@ void AEveCharacter::BeginPlay()
 		Sword->EquipItem();
 	}
 
+	if (Body_LightningComps == nullptr)
+	{
+		Body_LightningComps = NewObject<UNiagaraComponent>(this);
+		Body_LightningComps->SetupAttachment(RootComponent);
+		Body_LightningComps->SetAsset(Body_Lightning_effect);
+		Body_LightningComps->RegisterComponent();
+		Body_LightningComps->SetAutoActivate(false);
+		Body_LightningComps->SetAutoDestroy(false);
+
+		Body_LightningComps->DeactivateImmediate();
+	}
+
+	BodyMesh = this->FindComponentByClass<USkeletalMeshComponent>();
 
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_PerfectDodge);
@@ -503,6 +516,20 @@ void AEveCharacter::PerfectGuard()
 	PlayWorldSlowMotion(GuardSlowSpeed,0.1);
 	isPerfectGuarded = true;
 	AttributeComponent->AddBetaEnergy(10.f);
+
+	if (PerfectGuard_effect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			PerfectGuard_effect,
+			GetActorLocation(),
+			FRotator::ZeroRotator,
+			FVector(0.1f, 0.1f, 0.1f),
+			true,   // bAutoDestroy
+			true    // bAutoActivate
+		);
+	}
+
 }
 
 void AEveCharacter::PerfectDodge()
@@ -590,6 +617,7 @@ void AEveCharacter::BlinkAttack()
 	if (CanPerformAttack() == false)
 		return;
 
+	Sword->PlayBlinkEffect();
 	ExecuteComboAttack(SBEveTags::Eve_Attack_BlinkAttack);
 }
 
@@ -747,6 +775,15 @@ void AEveCharacter::HitReaction(const AActor* Attacker)
 	else if(isGuarding)
 	{
 		PlayGuardSound();
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			Guard_effect,
+			GetActorLocation(),
+			FRotator::ZeroRotator,
+			FVector(0.1f, 0.1f, 0.1f),
+			true,   // bAutoDestroy
+			true    // bAutoActivate
+		);
 		return;
 	}
 	else
@@ -893,6 +930,65 @@ void AEveCharacter::PlayPerfectParrySound()
 		PerfectParrySound_02,
 		GetActorLocation()
 	);
+}
+
+void AEveCharacter::ActiveSwordEffect()
+{
+	if (Sword == nullptr)
+		return;
+
+	Sword->PlayAllGuardEffects();
+}
+
+void AEveCharacter::DeActiveSwordEffect()
+{
+	if (Sword == nullptr)
+		return;
+
+	Sword->StopAllGuardEffects();
+}
+
+void AEveCharacter::StartPerfectDodge()
+{
+	if (DodgeOverlayMaterial && BodyMesh)
+	{
+		BodyMesh->SetOverlayMaterial(DodgeOverlayMaterial);
+	}
+}
+
+void AEveCharacter::EndOverlayEffect()
+{
+	if (BodyMesh)
+	{
+		// 기본 머티리얼로 복원
+		BodyMesh->SetOverlayMaterial(nullptr);
+	}
+}
+
+void AEveCharacter::StartBodyLightEffect()
+{
+	if(Body_LightningComps)
+		Body_LightningComps->Activate(true);
+}
+
+void AEveCharacter::EndBodyLightEffect()
+{
+	if(Body_LightningComps)
+		Body_LightningComps->DeactivateImmediate();
+}
+
+void AEveCharacter::StartBlinkOverlayEffect()
+{
+	if (BlinkOverlayMaterial && BodyMesh)
+	{
+		BodyMesh->SetOverlayMaterial(BlinkOverlayMaterial);
+	}
+}
+
+void AEveCharacter::StartWordBlinkEffct()
+{
+	if (Sword)
+		Sword->PlayBlinkEffect();
 }
 
 void AEveCharacter::Pressed_Shift()
