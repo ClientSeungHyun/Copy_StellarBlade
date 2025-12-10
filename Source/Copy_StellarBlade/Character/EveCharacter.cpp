@@ -319,6 +319,9 @@ void AEveCharacter::Move(const FInputActionValue& Values)
 
 void AEveCharacter::Look(const FInputActionValue& Values)
 {
+	if (TargetingComponent->IsLockOn())
+		return;
+
 	FVector2D LookDirection = Values.Get<FVector2D>();
 
 	if (Controller != nullptr)

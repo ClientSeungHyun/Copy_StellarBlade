@@ -138,33 +138,6 @@ void AMonsterCharacter::BeginPlay()
 
 	InitDynamicMaterials();
 
-	//// 머티리얼
-	//TArray<UMaterialInterface*> Materials = GetMesh()->GetMaterials();
-	//uint32 MaterialIndex = 0;
-
-	//// 자식 메시 찾기
-	//TArray<USceneComponent*> ChildrenComp;
-	//GetMesh()->GetChildrenComponents(true, ChildrenComp);
-
-	//for (USceneComponent* Child : ChildrenComp)
-	//{
-	//	if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(Child))
-	//	{
-	//		Materials.Append(SkelComp->GetMaterials());
-	//	}
-	//}
-
-	//for (UMaterialInterface* const Materail : Materials)
-	//{
-	//	UMaterialInstanceDynamic* MaterialDynamic = UMaterialInstanceDynamic::Create(Materail, this);
-	//	if (MaterialDynamic)
-	//	{
-	//		GetMesh()->SetMaterial(MaterialIndex, MaterialDynamic);
-	//		DynamicMaterailIndices.Add(MaterialIndex);
-	//	}
-	//	++MaterialIndex;
-	//}
-
 	if(bIsSliceObject)
 		SelectVertices(0);
 }
@@ -249,6 +222,11 @@ void AMonsterCharacter::OnDeath()
 
 	bIsDead = true;
 	MonsterStatBarWidget->DestroyComponent();
+
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
