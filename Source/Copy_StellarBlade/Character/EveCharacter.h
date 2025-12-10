@@ -117,6 +117,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Run/Dodge")
 	float DodgeThreshold = 0.25f; // 0.25초 이하로 누르면 회피
 
+	//slowmotion 수치
+	UPROPERTY(EditAnywhere, Category = "SlowMotion")
+	float GuardSlowSpeed = 0.3f;
+	
+	UPROPERTY(EditAnywhere, Category = "SlowMotion")
+	float DodgeSlowSpeed = 0.6f;
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimFront;

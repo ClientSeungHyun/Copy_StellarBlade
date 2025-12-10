@@ -477,7 +477,7 @@ void AEveCharacter::EndGuard()
 
 void AEveCharacter::PerfectGuard()
 {
-	PlayWorldSlowMotion(0.3,0.1);
+	PlayWorldSlowMotion(GuardSlowSpeed,0.1);
 	isPerfectGuarded = true;
 	AttributeComponent->AddBetaEnergy(10.f);
 }
@@ -486,7 +486,7 @@ void AEveCharacter::PerfectDodge()
 {
 	StateComponent->SetState(SBEveTags::Eve_State_PerfectDodge);
 
-	PlayWorldSlowMotion(0.8, 1.0);
+	PlayWorldSlowMotion(DodgeSlowSpeed, 1.0);
 
 	if (TargetingComponent->IsLockOn())
 	{
