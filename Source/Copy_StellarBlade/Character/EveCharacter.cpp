@@ -131,7 +131,7 @@ void AEveCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	if (isPressShift)
+	if (isPressShift && isAttacking == false)
 	{
 		float CurrentPressTime = FMath::Clamp(GetWorld()->GetTimeSeconds() - PressShiftTime,0.0f,1.0f);
 		//UE_LOG(LogTemp, Warning, TEXT("Press Time : %.2f"), CurrentPressTime);
