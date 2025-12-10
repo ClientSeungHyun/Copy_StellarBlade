@@ -8,9 +8,11 @@
 #include "Interfaces/TargetingInterface.h"
 #include "Components/TimelineComponent.h"
 
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
+
 #include "ProceduralMeshComponent.h"
 #include "MonsterCharacter.generated.h"
-
 
 class USBStateComponent;
 class UMonsterAttributeComponent;
@@ -104,7 +106,7 @@ protected:
 	USoundCue* ImpactSound;
 
 	UPROPERTY(EditAnywhere, Category = "Effect")
-	UParticleSystem* ImpactParticle;
+	UNiagaraSystem* ImpactNiagara;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "AI | Patrol")

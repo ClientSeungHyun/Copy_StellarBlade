@@ -20,7 +20,8 @@ public class Copy_StellarBlade : ModuleRules
             "GamePlayTags",
             "AnimGraphRuntime",
             "Json",
-            "ProceduralMeshComponent"
+            "ProceduralMeshComponent",
+            "Niagara"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

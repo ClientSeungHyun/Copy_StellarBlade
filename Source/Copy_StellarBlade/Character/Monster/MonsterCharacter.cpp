@@ -276,10 +276,19 @@ void AMonsterCharacter::ImpactEffect(const FVector& Location)
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, Location);
 	}
 
-	if (ImpactParticle)
+	if (ImpactNiagara)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, Location);
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			ImpactNiagara,
+			Location,
+			FRotator::ZeroRotator,
+			FVector(0.1f, 0.1f, 0.1f),
+			true,   // bAutoDestroy
+			true    // bAutoActivate
+		);
 	}
+
 }
 
 void AMonsterCharacter::HitReaction(const AActor* Attacker)
