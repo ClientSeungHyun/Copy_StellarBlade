@@ -114,7 +114,7 @@ void USBWeaponCollisionComponent::CollisionTrace()
         TraceObjectTypes,
         false,
         IgnoredActors,
-        DrawDebugType,
+        EDrawDebugTrace::Type::None,
         OutHits,
         true);
 

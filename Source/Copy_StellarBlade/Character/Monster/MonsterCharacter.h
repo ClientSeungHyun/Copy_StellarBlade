@@ -8,6 +8,7 @@
 #include "Interfaces/TargetingInterface.h"
 #include "Components/TimelineComponent.h"
 
+#include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
 
@@ -57,6 +58,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "SpecialAttack")
 	int8 RepulseAttackCount = 4;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effect")
+	UNiagaraComponent* ImpactNiagaraComp;
+
 
 protected:
 	UPROPERTY(VisibleAnywhere)
