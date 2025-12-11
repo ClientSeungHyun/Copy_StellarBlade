@@ -197,19 +197,6 @@ float AMonsterCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEven
 				}
 			}
 		}
-		/*if (HitDirection != FVector::ZeroVector)
-		{
-			for (const auto& DynamicMaterialIndex : DynamicMaterailIndices)
-			{
-				UMaterialInstanceDynamic* DynamicMaterial =
-					Cast<UMaterialInstanceDynamic>(GetMesh()->GetMaterial(DynamicMaterialIndex));
-
-				DynamicMaterial->SetVectorParameterValue("HitWorldPosition", ImpactPoint);
-				DynamicMaterial->SetVectorParameterValue("HitDirection", PlayerWeapon->GetAttackDirection());
-				DynamicMaterial->SetScalarParameterValue("HitStrength", 1.0f);
-				DynamicMaterial->SetScalarParameterValue("HitTime", GetWorld()->GetTimeSeconds());
-			}
-		}*/
 	}
 
 	return ActualDamage;
@@ -452,6 +439,11 @@ void AMonsterCharacter::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnd
 					FLinearColor::Green,
 					2.0f    
 				);
+
+				if (AttackTypeTag.MatchesTag(SBGameplayTags::Monster_Attack_Blink))
+				{
+					ResetAttackCount();
+				}
 
 				AnimInstance->Montage_Play(Montage);
 				AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, Montage);

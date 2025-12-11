@@ -234,6 +234,8 @@ public:
 	bool IsHaveBlinkAttack() const;
 
 	FORCEINLINE int8 GetCurrentAttackCount() const { return CurrentAttackCount; }
+	FORCEINLINE void ResetAttackCount() { CurrentAttackCount = 0; }
+
 	FORCEINLINE int8 GetBlinkAttackCount() const { return BlinklAttackCount; }
 	FORCEINLINE int8 GetRepulseAttackCount() const { return RepulseAttackCount; }
 
