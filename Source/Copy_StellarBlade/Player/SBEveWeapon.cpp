@@ -32,16 +32,35 @@ void ASBEveWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (int i = 0; i < 3; i++)
-	{
-		if (!Guard_effects[i]) continue;
+	//for (int i = 0; i < 3; i++)
+	//{
+	//	if (!Guard_effects[i]) continue;
 
-		GuardComps[i] = NewObject<UNiagaraComponent>(this);
-		GuardComps[i]->SetupAttachment(RootComponent);
-		GuardComps[i]->SetAsset(Guard_effects[i]);
-		GuardComps[i]->RegisterComponent();
-		GuardComps[i]->SetAutoActivate(false);
-		GuardComps[i]->SetAutoDestroy(false);
+
+	//	GuardComps[i] = NewObject<UNiagaraComponent>(this);
+	//	GuardComps[i]->SetupAttachment(RootComponent);
+	//	GuardComps[i]->SetAsset(Guard_effects[i]);
+	//	GuardComps[i]->RegisterComponent();
+	//	GuardComps[i]->SetAutoActivate(false);
+	//	GuardComps[i]->SetAutoDestroy(false);
+	//}
+
+	GuardComps.Empty();
+	GuardComps.SetNum(3);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		if (Guard_effects[i] == nullptr)
+			continue; // 에디터에서 안 넣었으면 스킵
+
+		UNiagaraComponent* Comp = NewObject<UNiagaraComponent>(this);
+		Comp->SetAsset(Guard_effects[i]);
+		Comp->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		Comp->RegisterComponent();
+		Comp->SetAutoActivate(false);
+		Comp->SetAutoDestroy(false);
+
+		GuardComps[i] = Comp;
 	}
 
 	StopAllGuardEffects();
@@ -101,7 +120,7 @@ float ASBEveWeapon::GetAttackDamage()
 }
 void ASBEveWeapon::PlayAllGuardEffects()
 {
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 2; i++)
 		if (GuardComps[i]) GuardComps[i]->Activate(true);
 }
 

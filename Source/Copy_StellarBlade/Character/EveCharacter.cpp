@@ -105,19 +105,28 @@ void AEveCharacter::BeginPlay()
 	{
 		Body_LightningComps = NewObject<UNiagaraComponent>(this);
 		Body_LightningComps->SetupAttachment(RootComponent);
-		Body_LightningComps->SetAsset(Body_Lightning_effect);
 		Body_LightningComps->RegisterComponent();
+		Body_LightningComps->bAutoActivate = false;
 		Body_LightningComps->SetAutoActivate(false);
 		Body_LightningComps->SetAutoDestroy(false);
 
 		Body_LightningComps->DeactivateImmediate();
+		Body_LightningComps->SetAsset(Body_Lightning_effect);
 	}
+
+	if (Body_LightningComps->IsActive())
+	{
+		Body_LightningComps->DeactivateImmediate();
+	}
+
 
 	BodyMesh = this->FindComponentByClass<USkeletalMeshComponent>();
 
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_PerfectDodge);
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Running);
+
+
 }
 
 FVector PreviousRootLocation;
@@ -249,20 +258,35 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
 
-	//if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
-	//{
-	//	const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
 
-	//	// 데미지 방향
-	//	FVector ShotDirection = PointDamageEvent->ShotDirection;
-	//	// 히트 위치 (표면 접촉 관점)
-	//	FVector ImpactPoint = PointDamageEvent->HitInfo.ImpactPoint;
-	//	// 히트 방향
-	//	FVector ImpactDirection = PointDamageEvent->HitInfo.ImpactNormal;
-	//	// 히트한 객체의 Location (객체 중심 관점)
-	//	FVector HitLocation = PointDamageEvent->HitInfo.Location;
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
 
-	//}
+		// 데미지 방향
+		FVector ShotDirection = PointDamageEvent->ShotDirection;
+		// 히트 방향
+		FVector ImpactDirection = PointDamageEvent->HitInfo.ImpactNormal;
+		// 히트한 객체의 Location (객체 중심 관점)
+		FVector HitLocation = PointDamageEvent->HitInfo.Location;
+
+		if (isGuarding)
+		{
+			if (Guard_effect)
+			{
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+					GetWorld(),
+					PerfectGuard_effect,
+					HitLocation,
+					FRotator::ZeroRotator,
+					FVector(0.1f, 0.1f, 0.1f),
+					true,   // bAutoDestroy
+					true    // bAutoActivate
+				);
+			}
+		}
+
+	}
 
 	return ActualDamage;
 }
@@ -605,6 +629,8 @@ void AEveCharacter::NormalAttack()
 
 void AEveCharacter::SkillAttack()
 {
+	BlinkAttack();
+
 	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergy() < 40.f)
 		return;
 

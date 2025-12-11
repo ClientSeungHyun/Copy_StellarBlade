@@ -37,7 +37,7 @@ protected:
 	UNiagaraSystem* Guard_effects[3];
 
 	UPROPERTY()
-	UNiagaraComponent* GuardComps[3];
+	TArray<UNiagaraComponent*> GuardComps;
 
 	UPROPERTY(EditAnywhere, Category = "Effect")
 	UNiagaraSystem* Blink_effect;
