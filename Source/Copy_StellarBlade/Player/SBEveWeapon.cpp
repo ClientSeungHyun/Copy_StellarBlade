@@ -45,24 +45,35 @@ void ASBEveWeapon::BeginPlay()
 	//	GuardComps[i]->SetAutoDestroy(false);
 	//}
 
+	for (int i = 0; i < GuardComps.Num(); ++i)
+	{
+		if (GuardComps[i] && !GuardComps[i]->IsBeingDestroyed())
+		{
+			GuardComps[i]->DestroyComponent();
+			GuardComps[i] = nullptr; // 핵심! 즉시 포인터 무효화
+		}
+	}
 	GuardComps.Empty();
-	GuardComps.SetNum(3);
+	GuardComps.SetNum(3); // 3개의 nullptr 상태로 초기화 완료
 
 	for (int i = 0; i < 3; ++i)
 	{
 		if (Guard_effects[i] == nullptr)
-			continue; // 에디터에서 안 넣었으면 스킵
+			continue;
+		UNiagaraComponent* Comp = NewObject<UNiagaraComponent>(this, UNiagaraComponent::StaticClass());
 
-		UNiagaraComponent* Comp = NewObject<UNiagaraComponent>(this);
+		// ... 나머지 설정은 완벽합니다.
 		Comp->SetAsset(Guard_effects[i]);
-		Comp->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
 		Comp->RegisterComponent();
+		Comp->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+
 		Comp->SetAutoActivate(false);
-		Comp->SetAutoDestroy(false);
+		Comp->SetAutoDestroy(false); 
 
 		GuardComps[i] = Comp;
 	}
-
 	StopAllGuardEffects();
 }
 
