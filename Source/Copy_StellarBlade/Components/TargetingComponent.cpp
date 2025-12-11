@@ -126,7 +126,7 @@ void UTargetingComponent::FindTargets(TArray<AActor*>& OutTargetingActors) const
 		ObjectTypes,
 		false,
 		ActorsToIgnore,
-		DrawDebugType,
+		EDrawDebugTrace::Type::None,
 		OutHits,
 		true);
 
@@ -173,7 +173,7 @@ AActor* UTargetingComponent::FindClosestTarget(TArray<AActor*>& InTargets, ESwit
 			UEngineTypes::ConvertToTraceType(ECC_Visibility),
 			false,
 			ActorsToIgnore,
-			DrawDebugType,
+			EDrawDebugTrace::Type::None,
 			OutHit,
 			true);
 

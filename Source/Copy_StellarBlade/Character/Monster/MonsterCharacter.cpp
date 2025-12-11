@@ -442,7 +442,7 @@ void AMonsterCharacter::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnd
 
 				if (AttackTypeTag.MatchesTag(SBGameplayTags::Monster_Attack_Blink))
 				{
-					ResetAttackCount();
+					//ResetAttackCount();
 				}
 
 				AnimInstance->Montage_Play(Montage);

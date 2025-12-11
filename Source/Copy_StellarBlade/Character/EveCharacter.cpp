@@ -629,8 +629,6 @@ void AEveCharacter::NormalAttack()
 
 void AEveCharacter::SkillAttack()
 {
-	BlinkAttack();
-
 	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergy() < 40.f)
 		return;
 
