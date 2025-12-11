@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "GameFramework/Actor.h"
+#include "NiagaraComponent.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
 #include "SBEveWeapon.generated.h"
 
 class USBWeaponCollisionComponent;
@@ -30,6 +33,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
 	TArray<USoundBase*> AttackSoundList;
 
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraSystem* Guard_effects[3];
+
+	UPROPERTY()
+	TArray<UNiagaraComponent*> GuardComps;
+
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraSystem* Blink_effect;
+
 public:	
 	ASBEveWeapon();
 
@@ -48,6 +60,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Inform")
 	FVector AttackDirection = FVector::ZeroVector;
+
 
 private:
 	FGameplayTag lastAttackTag;
@@ -73,6 +86,10 @@ public:
 	FORCEINLINE USBWeaponCollisionComponent* GetCollision(int32 CollisionNum) const { return WeaponCollision; };
 
 	float GetAttackDamage() ;
+
+	void PlayAllGuardEffects();
+	void StopAllGuardEffects();
+	void PlayBlinkEffect();
 
 	virtual void ActivateCollision();
 	virtual void DeactivateCollision();

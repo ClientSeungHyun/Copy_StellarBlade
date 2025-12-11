@@ -17,7 +17,7 @@ bool UBTDecorator_MonsterBlinkAttack::CalculateRawConditionValue(UBehaviorTreeCo
 	const int8 CurrentAttackCount = OwnerMonster->GetCurrentAttackCount();
 	const int8 BlinkAttackCount = OwnerMonster->GetBlinkAttackCount();
 
-
+	if(CurrentAttackCount < BlinkAttackCount)
 		return true;
 
 	return false;

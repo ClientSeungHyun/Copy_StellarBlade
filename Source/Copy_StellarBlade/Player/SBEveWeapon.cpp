@@ -31,6 +31,39 @@ ASBEveWeapon::ASBEveWeapon()
 void ASBEveWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//for (int i = 0; i < 3; i++)
+	//{
+	//	if (!Guard_effects[i]) continue;
+
+
+	//	GuardComps[i] = NewObject<UNiagaraComponent>(this);
+	//	GuardComps[i]->SetupAttachment(RootComponent);
+	//	GuardComps[i]->SetAsset(Guard_effects[i]);
+	//	GuardComps[i]->RegisterComponent();
+	//	GuardComps[i]->SetAutoActivate(false);
+	//	GuardComps[i]->SetAutoDestroy(false);
+	//}
+
+	GuardComps.Empty();
+	GuardComps.SetNum(3);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		if (Guard_effects[i] == nullptr)
+			continue; // 에디터에서 안 넣었으면 스킵
+
+		UNiagaraComponent* Comp = NewObject<UNiagaraComponent>(this);
+		Comp->SetAsset(Guard_effects[i]);
+		Comp->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		Comp->RegisterComponent();
+		Comp->SetAutoActivate(false);
+		Comp->SetAutoDestroy(false);
+
+		GuardComps[i] = Comp;
+	}
+
+	StopAllGuardEffects();
 }
 
 void ASBEveWeapon::Tick(float DeltaTime)
@@ -85,6 +118,34 @@ float ASBEveWeapon::GetAttackDamage()
 
 	return BaseDamage;
 }
+void ASBEveWeapon::PlayAllGuardEffects()
+{
+	for (int i = 0; i < 2; i++)
+		if (GuardComps[i]) GuardComps[i]->Activate(true);
+}
+
+void ASBEveWeapon::StopAllGuardEffects()
+{
+	for (int i = 0; i < 3; i++)
+		if (GuardComps[i]) GuardComps[i]->DeactivateImmediate();
+}
+
+void ASBEveWeapon::PlayBlinkEffect()
+{
+	if (Blink_effect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			Blink_effect,
+			GetActorLocation(),
+			FRotator::ZeroRotator,
+			FVector(0.1f, 0.1f, 0.1f),
+			true,   // bAutoDestroy
+			true    // bAutoActivate
+		);
+	}
+}
+
 void ASBEveWeapon::ActivateCollision()
 {
 	WeaponCollision->TurnOnCollision();

@@ -101,10 +101,32 @@ void AEveCharacter::BeginPlay()
 		Sword->EquipItem();
 	}
 
+	if (Body_LightningComps == nullptr)
+	{
+		Body_LightningComps = NewObject<UNiagaraComponent>(this);
+		Body_LightningComps->SetupAttachment(RootComponent);
+		Body_LightningComps->RegisterComponent();
+		Body_LightningComps->bAutoActivate = false;
+		Body_LightningComps->SetAutoActivate(false);
+		Body_LightningComps->SetAutoDestroy(false);
+
+		Body_LightningComps->DeactivateImmediate();
+		Body_LightningComps->SetAsset(Body_Lightning_effect);
+	}
+
+	if (Body_LightningComps->IsActive())
+	{
+		Body_LightningComps->DeactivateImmediate();
+	}
+
+
+	BodyMesh = this->FindComponentByClass<USkeletalMeshComponent>();
 
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Dodge);
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_PerfectDodge);
 	FreePlayerMovementAtLockon_CheckTags.AddTag(SBEveTags::Eve_State_Running);
+
+
 }
 
 FVector PreviousRootLocation;
@@ -236,20 +258,35 @@ float AEveCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, A
 		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
 	}
 
-	//if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
-	//{
-	//	const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
 
-	//	// 데미지 방향
-	//	FVector ShotDirection = PointDamageEvent->ShotDirection;
-	//	// 히트 위치 (표면 접촉 관점)
-	//	FVector ImpactPoint = PointDamageEvent->HitInfo.ImpactPoint;
-	//	// 히트 방향
-	//	FVector ImpactDirection = PointDamageEvent->HitInfo.ImpactNormal;
-	//	// 히트한 객체의 Location (객체 중심 관점)
-	//	FVector HitLocation = PointDamageEvent->HitInfo.Location;
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
 
-	//}
+		// 데미지 방향
+		FVector ShotDirection = PointDamageEvent->ShotDirection;
+		// 히트 방향
+		FVector ImpactDirection = PointDamageEvent->HitInfo.ImpactNormal;
+		// 히트한 객체의 Location (객체 중심 관점)
+		FVector HitLocation = PointDamageEvent->HitInfo.Location;
+
+		if (isGuarding)
+		{
+			if (Guard_effect)
+			{
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+					GetWorld(),
+					PerfectGuard_effect,
+					HitLocation,
+					FRotator::ZeroRotator,
+					FVector(0.1f, 0.1f, 0.1f),
+					true,   // bAutoDestroy
+					true    // bAutoActivate
+				);
+			}
+		}
+
+	}
 
 	return ActualDamage;
 }
@@ -503,6 +540,20 @@ void AEveCharacter::PerfectGuard()
 	PlayWorldSlowMotion(GuardSlowSpeed,0.1);
 	isPerfectGuarded = true;
 	AttributeComponent->AddBetaEnergy(10.f);
+
+	if (PerfectGuard_effect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			PerfectGuard_effect,
+			GetActorLocation(),
+			FRotator::ZeroRotator,
+			FVector(0.1f, 0.1f, 0.1f),
+			true,   // bAutoDestroy
+			true    // bAutoActivate
+		);
+	}
+
 }
 
 void AEveCharacter::PerfectDodge()
@@ -578,6 +629,8 @@ void AEveCharacter::NormalAttack()
 
 void AEveCharacter::SkillAttack()
 {
+	BlinkAttack();
+
 	if (CanPerformAttack() == false || AttributeComponent->GetBetaEnergy() < 40.f)
 		return;
 
@@ -590,6 +643,7 @@ void AEveCharacter::BlinkAttack()
 	if (CanPerformAttack() == false)
 		return;
 
+	Sword->PlayBlinkEffect();
 	ExecuteComboAttack(SBEveTags::Eve_Attack_BlinkAttack);
 }
 
@@ -747,6 +801,15 @@ void AEveCharacter::HitReaction(const AActor* Attacker)
 	else if(isGuarding)
 	{
 		PlayGuardSound();
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			Guard_effect,
+			GetActorLocation(),
+			FRotator::ZeroRotator,
+			FVector(0.1f, 0.1f, 0.1f),
+			true,   // bAutoDestroy
+			true    // bAutoActivate
+		);
 		return;
 	}
 	else
@@ -893,6 +956,65 @@ void AEveCharacter::PlayPerfectParrySound()
 		PerfectParrySound_02,
 		GetActorLocation()
 	);
+}
+
+void AEveCharacter::ActiveSwordEffect()
+{
+	if (Sword == nullptr)
+		return;
+
+	Sword->PlayAllGuardEffects();
+}
+
+void AEveCharacter::DeActiveSwordEffect()
+{
+	if (Sword == nullptr)
+		return;
+
+	Sword->StopAllGuardEffects();
+}
+
+void AEveCharacter::StartPerfectDodge()
+{
+	if (DodgeOverlayMaterial && BodyMesh)
+	{
+		BodyMesh->SetOverlayMaterial(DodgeOverlayMaterial);
+	}
+}
+
+void AEveCharacter::EndOverlayEffect()
+{
+	if (BodyMesh)
+	{
+		// 기본 머티리얼로 복원
+		BodyMesh->SetOverlayMaterial(nullptr);
+	}
+}
+
+void AEveCharacter::StartBodyLightEffect()
+{
+	if(Body_LightningComps)
+		Body_LightningComps->Activate(true);
+}
+
+void AEveCharacter::EndBodyLightEffect()
+{
+	if(Body_LightningComps)
+		Body_LightningComps->DeactivateImmediate();
+}
+
+void AEveCharacter::StartBlinkOverlayEffect()
+{
+	if (BlinkOverlayMaterial && BodyMesh)
+	{
+		BodyMesh->SetOverlayMaterial(BlinkOverlayMaterial);
+	}
+}
+
+void AEveCharacter::StartWordBlinkEffct()
+{
+	if (Sword)
+		Sword->PlayBlinkEffect();
 }
 
 void AEveCharacter::Pressed_Shift()
