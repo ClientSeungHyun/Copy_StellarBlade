@@ -41,6 +41,7 @@ public:
 
 
 protected:
+	UPROPERTY()
 	class AEveCharacter* Character = nullptr;
 
 
